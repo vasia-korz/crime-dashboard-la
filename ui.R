@@ -2,6 +2,7 @@
 library(shiny)
 library(shinydashboard)
 library(DT)
+library(leaflet)
 
 # Define UI for application that displays a dashboard
 dashboardPage(
@@ -39,6 +40,7 @@ dashboardPage(
                 box(title = "Customer Distribution by Sales", status = "primary", solidHeader = TRUE, plotOutput("plot3"), width = 4)
               ),
               fluidRow(
+                box(title = "Top Customers", status = "primary", solidHeader = TRUE, leafletOutput("crimemap", height = 500)),
                 box(title = "Sales per Customer by Category", status = "primary", solidHeader = TRUE, 
                     conditionalPanel(
                       condition = "output.table_state == 'full'",
@@ -53,7 +55,6 @@ dashboardPage(
                     ), 
                     width = 6
                 ),
-                box(title = "Top Customers", status = "primary", solidHeader = TRUE, tableOutput("summary_table"), width = 6)
               )
       )
     )
