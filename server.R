@@ -69,15 +69,16 @@ shinyServer(function(input, output, session) {
   output$crimemap <- renderLeaflet({
     leaflet(data = dataset) %>%
       addTiles() %>%
-      setView(lng = -118.2437, lat = 34.0522, zoom = 10) %>%
+      setView(lng = -118.2437, lat = 34.0522, zoom = 9) %>%
       setMaxBounds(lng1 = -118.7, lat1 = 33.7, lng2 = -118.1, lat2 = 34.4) %>%
       addEasyButton(easyButton(
         icon = "fa-globe", title = "Reset View",
-        onClick = JS("function(btn, map){ map.setView([34.0522, -118.2437], 10); }")
+        onClick = JS("function(btn, map){ map.setView([34.0522, -118.2437], 9); }")
       )) %>%
       addCircleMarkers(
         lng = dataset_map$LON,
         lat = dataset_map$LAT,
+        popup = paste0("Popup window "),
         clusterOptions = markerClusterOptions()
       )
   })
