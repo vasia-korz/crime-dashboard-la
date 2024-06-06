@@ -11,8 +11,12 @@ library(plotly)
 dataset <- read.csv("data/dataset_recent.csv")
 
 dataset_map <- dataset %>%
-  select(c(AREA.NAME, LON, LAT, Vict.Descent, Status.Desc)) %>%
-  na.omit()
+  select(c(AREA.NAME, LON, LAT, Vict.Descent, Status.Desc, Vict.Sex)) %>%
+  na.omit() %>%
+  filter(Vict.Descent != "")  # Filter out empty strings in Vict.Descent
+
+# Exclude "O" from filtering choices
+vict_descent_choices <- unique(dataset_map$Vict.Descent[dataset_map$Vict.Descent != "Other"])
 
 areas_df <- dataset_map %>%
   group_by(AREA.NAME) %>%
@@ -20,15 +24,33 @@ areas_df <- dataset_map %>%
 
 # Define server logic
 shinyServer(function(input, output, session) {
-  
-  # Reactive value to keep track of the table state
   table_state <- reactiveVal("full")
   
+  # Reactive value to keep track of the table state
   filtered_data <- reactive({
-    if (input$vict.descent == "All") {
-      dataset_map
+    # Start with the entire dataset
+    result <- dataset_map
+    
+    # Apply the first filter if necessary
+    if (input$vict.descent != "All") {
+      result <- result %>% filter(Vict.Descent == input$vict.descent)
+    }
+    
+    # Apply the second filter if necessary
+    if (input$vict.sex != "All") {
+      result <- result %>% filter(Vict.Sex == input$vict.sex)
+    }
+    
+    # Return the filtered dataset
+    result
+  })
+  
+  filtered_data_without_desc <- reactive({
+    # Apply the second filter if necessary
+    if (input$vict.sex != "All") {
+      dataset_map %>% filter(Vict.Sex == input$vict.sex)
     } else {
-      dataset_map %>% filter(Vict.Descent == input$vict.descent)
+      dataset_map
     }
   })
   
@@ -97,41 +119,37 @@ shinyServer(function(input, output, session) {
     if (is.null(data) || nrow(data) == 0) {
       return(NULL)
     }
-    solved <- sum(data$Status.Desc %in% c("Adult Arrest", "Juv Arrest"))
-    not_solved <- sum(data$Status.Desc %in% c("Invest Cont", "Adult Other", "Juv Other", "UNK"))
+    solved <- sum(data$Status.Desc %in% c("Adult Arrest", "Juv Arrest", "Juv Other", "Adult Other"))
+    not_solved <- sum(data$Status.Desc %in% c("Invest Cont", "UNK"))
     plot_ly(labels = c("Solved", "Not Solved"), values = c(solved, not_solved), type = 'pie') %>%
       layout(title = "Crimes Solved vs. Not Solved")
   })
   
-  # Bar chart for number of crimes by Vict Descent with highlighting and reordering
+  # Bar chart for number of crimes by Vict Descent with highlighting and substituting "Others"
   output$plot2 <- renderPlotly({
-    data <- dataset_map %>%
-      na.omit() %>%
+    data <- filtered_data_without_desc() %>%
+      filter(!is.na(Vict.Descent) & Vict.Descent != "") %>%
       group_by(Vict.Descent) %>%
       summarize(count = n()) %>%
       arrange(desc(count))
     
     selected_vict_descent <- input$vict.descent
     
-    if (selected_vict_descent != "All" && !selected_vict_descent %in% data$Vict.Descent) {
-      data <- data %>%
-        mutate(Vict.Descent = ifelse(Vict.Descent == "Others", selected_vict_descent, Vict.Descent)) %>%
-        group_by(Vict.Descent) %>%
-        summarize(count = sum(count))
-    }
-    
-    top_5 <- head(data, 5)
+    top_4 <- head(filter(data, Vict.Descent != "Other"), 4)
     others <- data %>%
-      slice(6:n()) %>%
+      filter(!(Vict.Descent %in% top_4$Vict.Descent)) %>%
       summarize(Vict.Descent = "Others", count = sum(count))
     
-    final_data <- bind_rows(top_5, others)
-    
-    if (selected_vict_descent != "All" && !selected_vict_descent %in% top_5$Vict.Descent) {
-      others_count <- final_data[final_data$Vict.Descent == "Others", "count"]
-      final_data <- final_data[final_data$Vict.Descent != "Others", ]
-      final_data <- bind_rows(final_data, data.frame(Vict.Descent = selected_vict_descent, count = sum(data[data$Vict.Descent == selected_vict_descent, "count"])))
-      final_data <- bind_rows(final_data, data.frame(Vict.Descent = "Others", count = others_count - sum(data[data$Vict.Descent == selected_vict_descent, "count"])))
+    if (selected_vict_descent != "All" && !selected_vict_descent %in% top_4$Vict.Descent) {
+      others_count <- others$count
+      selected_count <- data %>% filter(Vict.Descent == selected_vict_descent) %>% pull(count)
+      # Subtract the selected count from "Others" and add the fifth top to "Others"
+      others_count <- others_count - selected_count + top_4[4, "count"]
+      top_4 <- top_4[1:3, ]
+      top_4 <- bind_rows(top_4, data.frame(Vict.Descent = selected_vict_descent, count = selected_count))
+      final_data <- bind_rows(top_4, data.frame(Vict.Descent = "Others", count = others_count))
+    } else {
+      final_data <- bind_rows(top_4, others)
     }
     
     final_data$Vict.Descent <- factor(final_data$Vict.Descent, levels = c(final_data$Vict.Descent[final_data$Vict.Descent != "Others"], "Others"))
@@ -184,6 +202,12 @@ shinyServer(function(input, output, session) {
         )
     }
   })
+  
+  observeEvent(input$vict.descent, {
+    sex <- levels(factor(c("All", dataset_map$Vict.Sex)))
+    updateSelectInput(session, "vict.sex", choices = sex)
+  })
+  
   
   # Output table state for conditional panels
   output$table_state <- reactive({

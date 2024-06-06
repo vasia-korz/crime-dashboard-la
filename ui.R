@@ -5,8 +5,8 @@ library(DT)
 library(leaflet)
 library(plotly)
 
-# Predefined vector of possible values for "Vict Descent"
-vict_descent_choices <- c("All", "H", "W", "X", "B", "O", "A", "K", "F", "C", "J", "V", "I", "Z", "U", "P", "L", "D", "G", "S")
+vict_descent_choices <- c("All", "Hispanic", "White", "Black", "Asian", "Korean", "Filipino", "Chinese", "Japanese", "Vietnamese", "Native", "Indian", "Hawaiian", "Pacific", "Laotian", "Cambodian", "Guamanian", "Samoan")
+vict_sex_choices <- c("All", "M", "F", "X")
 
 # Define UI for application that displays a dashboard
 dashboardPage(
@@ -14,15 +14,9 @@ dashboardPage(
   
   dashboardSidebar(
     sidebarMenu(
-      menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
-      sliderInput("bins",
-                  "Number of bins:",
-                  min = 1,
-                  max = 50,
-                  value = 30),
-      selectInput("vict.descent", "Victim Descent:",
-                  choices = vict_descent_choices)
-    )
+      menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard"))
+    ),
+    collapsed = T
   ),
   
   dashboardBody(
@@ -35,7 +29,25 @@ dashboardPage(
           }
         });
         "
+      )),
+      tags$style(HTML(
+        "
+        .main-header .sidebar-toggle {
+          display: none;
+        }
+        "
       ))
+    ),
+    
+    fluidRow(
+      box(width = 3, 
+          selectInput("vict.descent", "Victim Descent:",
+                      choices = vict_descent_choices),
+      ),
+      box(width = 3, 
+          selectInput("vict.sex", "Victim Sex:",
+                      choices = vict_sex_choices),
+      )
     ),
     
     tabItems(
