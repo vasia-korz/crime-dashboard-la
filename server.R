@@ -204,7 +204,8 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$vict.descent, {
-    sex <- levels(factor(c("All", dataset_map$Vict.Sex)))
+    filtered_dataset <- dataset_map %>% filter(Vict.Descent == input$vict.descent)
+    sex <- unique(c("All", filtered_dataset$Vict.Sex))
     updateSelectInput(session, "vict.sex", choices = sex)
   })
   
