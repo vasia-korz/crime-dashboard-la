@@ -7,53 +7,95 @@ library(leaflet)
 library(leaflet.extras)
 library(plotly)
 
-# Load dataset
+# Whole dataset
 dataset <- read.csv("data/dataset_recent.csv")
 
-dataset_map <- dataset %>%
+# Truncated columns and NA values
+dataset_cut <- dataset %>%
   select(c(AREA.NAME, LON, LAT, Vict.Descent, Status.Desc, Vict.Sex)) %>%
   na.omit() %>%
-  filter(Vict.Descent != "")  # Filter out empty strings in Vict.Descent
+  filter(Vict.Descent != "")
 
-# Exclude "O" from filtering choices
-vict_descent_choices <- unique(dataset_map$Vict.Descent[dataset_map$Vict.Descent != "Other"])
+# Initial choices for Vict.Descent filter
+vict_descent_choices <- dataset_cut %>%
+  select(Vict.Descent) %>%
+  filter(Vict.Descent != "Other") %>%
+  unique()
 
-areas_df <- dataset_map %>%
-  group_by(AREA.NAME) %>%
-  summarize(count = n(), lon = mean(LON), lat = mean(LAT))
+# map view
+url_template <- "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+attribution <- '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
 
-# Define server logic
 shinyServer(function(input, output, session) {
-  table_state <- reactiveVal("full")
-  
-  # Reactive value to keep track of the table state
+  ### Filters ###
+
+  # Limit choices from filter by vict.descent
+  observeEvent(input$vict.descent, {
+    sex <- unique(c("All", if (input$vict.descent != "All") {
+      dataset_cut %>%
+        filter(Vict.Descent == input$vict.descent) %>%
+        pull(Vict.Sex)
+    } else {
+      dataset_cut$Vict.Sex
+    }))
+
+    updateSelectInput(
+      session,
+      "vict.sex",
+      choices = sex,
+      selected = input$vict.sex
+    )
+  })
+
+  # Limit choices from filter by sex
+  observeEvent(input$vict.sex, {
+    descent <- unique(c("All", if (input$vict.sex != "All") {
+      dataset_cut %>%
+        filter(Vict.Sex == input$vict.sex) %>%
+        filter(Vict.Descent != "Other") %>%
+        pull(Vict.Descent)
+    } else {
+      dataset_cut %>%
+        filter(Vict.Descent != "Other") %>%
+        pull(Vict.Descent)
+    }))
+
+    updateSelectInput(
+      session,
+      "vict.descent",
+      choices = descent,
+      selected = input$vict.descent
+    )
+  })
+
+  ### Datasets ###
+
+  # General data
   filtered_data <- reactive({
-    # Start with the entire dataset
-    result <- dataset_map
-    
-    # Apply the first filter if necessary
+    result <- dataset_cut
+
     if (input$vict.descent != "All") {
       result <- result %>% filter(Vict.Descent == input$vict.descent)
     }
-    
-    # Apply the second filter if necessary
+
     if (input$vict.sex != "All") {
       result <- result %>% filter(Vict.Sex == input$vict.sex)
     }
-    
-    # Return the filtered dataset
+
     result
   })
-  
+
+  # Bar chart data
   filtered_data_without_desc <- reactive({
     # Apply the second filter if necessary
     if (input$vict.sex != "All") {
-      dataset_map %>% filter(Vict.Sex == input$vict.sex)
+      dataset_cut %>% filter(Vict.Sex == input$vict.sex)
     } else {
-      dataset_map
+      dataset_cut
     }
   })
-  
+
+  # Table data
   filtered_areas_df <- reactive({
     data <- filtered_data()
     if (is.null(data) || nrow(data) == 0) {
@@ -63,8 +105,115 @@ shinyServer(function(input, output, session) {
       group_by(AREA.NAME) %>%
       summarize(count = n(), lon = mean(LON), lat = mean(LAT))
   })
-  
-  # Render the full data table with all columns
+
+  ### Plots ###
+
+  # Pie chart
+  output$plot1 <- renderPlotly({
+    data <- filtered_data()
+
+    if (is.null(data) || nrow(data) == 0) {
+      return(NULL)
+    }
+
+    finished_label <- c(
+      "Adult Arrest",
+      "Juv Arrest",
+      "Juv Other",
+      "Adult Other"
+    )
+
+    finished <- sum(data$Status.Desc %in% finished_label)
+    investigation_continued <- sum(!data$Status.Desc %in% finished_label)
+
+    plot_ly(
+      labels = c("Finished", "Investigation Continuing"),
+      values = c(finished, investigation_continued),
+      type = "pie"
+    ) %>%
+      layout(title = "Crime status")
+  })
+
+  # Bar chart
+  output$plot2 <- renderPlotly({
+    data <- filtered_data_without_desc() %>%
+      filter(!is.na(Vict.Descent) & Vict.Descent != "") %>%
+      group_by(Vict.Descent) %>%
+      summarize(count = n()) %>%
+      arrange(desc(count))
+
+    selected_vict_descent <- input$vict.descent
+
+    n <- 4
+    top <- head(filter(data, Vict.Descent != "Other"), n)
+
+    others <- data %>%
+      filter(!(Vict.Descent %in% top$Vict.Descent)) %>%
+      summarize(Vict.Descent = "Others", count = sum(count))
+
+    # if not in top
+    if (selected_vict_descent != "All" &&
+          !selected_vict_descent %in% top$Vict.Descent) {
+      others_count <- others$count
+      selected_count <- data %>%
+        filter(Vict.Descent == selected_vict_descent) %>%
+        pull(count)
+
+      # Compensate
+      others_count <- others_count - selected_count + top[n, "count"]
+      top <- top[1:n - 1, ]
+
+      selected_df <- data.frame(
+        Vict.Descent = selected_vict_descent,
+        count = selected_count
+      )
+
+      others_df <- data.frame(
+        Vict.Descent = "Others",
+        count = others_count
+      )
+
+      final_data <- bind_rows(top, selected_df, others_df)
+    } else {
+      final_data <- bind_rows(top, others)
+    }
+
+    # Move "Others" to end
+    final_data$Vict.Descent <- factor(
+      final_data$Vict.Descent,
+      levels = c(
+        final_data$Vict.Descent[final_data$Vict.Descent != "Others"],
+        "Others"
+      )
+    )
+
+    colors <- rep("rgb(31, 119, 180)", nrow(final_data))
+    colors[final_data$Vict.Descent == selected_vict_descent] <- "rgb(255, 127, 14)"
+
+    plot_ly(
+      final_data,
+      x = ~Vict.Descent,
+      y = ~count,
+      type = "bar",
+      name = "Number of Crimes",
+      marker = list(color = colors)
+    ) %>%
+      layout(
+        title = "Number of Crimes by Victim Descent",
+        xaxis = list(title = "Victim Descent"),
+        yaxis = list(title = "Number of Crimes"),
+        margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4)
+      )
+  })
+
+  # Table view 
+  table_state <- reactiveVal("full")
+  output$table_state <- reactive({
+    table_state()
+  })
+  outputOptions(output, "table_state", suspendWhenHidden = FALSE)
+
+  # Full table
   output$full_table <- renderDataTable({
     data <- filtered_areas_df()
     if (is.null(data)) {
@@ -72,8 +221,8 @@ shinyServer(function(input, output, session) {
     }
     datatable(data, selection = "single", options = list(pageLength = 10))
   })
-  
-  # Render the short data table with only two columns
+
+  # Short table
   output$short_table <- renderDataTable({
     data <- filtered_areas_df()
     if (is.null(data)) {
@@ -81,89 +230,41 @@ shinyServer(function(input, output, session) {
     }
     datatable(data[, c("AREA.NAME", "count")], selection = "single", options = list(pageLength = 10))
   })
-  
-  # Observe the table selection
+
+  # Observe full table selection
   observeEvent(input$full_table_rows_selected, {
     selected_row <- input$full_table_rows_selected
-    
+
     if (length(selected_row)) {
       table_state("short")
       data <- filtered_areas_df()
       selected_row <- data[selected_row, ]
-      
+
       leafletProxy("crimemap") %>%
         setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
     }
   })
-  
+
+  # Observe short table selection
   observeEvent(input$short_table_rows_selected, {
     selected_row <- input$short_table_rows_selected
-    
+
     if (length(selected_row)) {
       data <- filtered_areas_df()
       selected_row <- data[selected_row, ]
-      
+
       leafletProxy("crimemap") %>%
         setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
     }
   })
-  
-  # Listen for custom message to reset the UI
+
+  # Reset short table
   observeEvent(input$esc_key, {
     table_state("full")
   })
-  
-  # Pie chart for crimes solved vs not solved
-  output$plot1 <- renderPlotly({
-    data <- filtered_data()
-    if (is.null(data) || nrow(data) == 0) {
-      return(NULL)
-    }
-    solved <- sum(data$Status.Desc %in% c("Adult Arrest", "Juv Arrest", "Juv Other", "Adult Other"))
-    not_solved <- sum(data$Status.Desc %in% c("Invest Cont", "UNK"))
-    plot_ly(labels = c("Solved", "Not Solved"), values = c(solved, not_solved), type = 'pie') %>%
-      layout(title = "Crimes Solved vs. Not Solved")
-  })
-  
-  # Bar chart for number of crimes by Vict Descent with highlighting and substituting "Others"
-  output$plot2 <- renderPlotly({
-    data <- filtered_data_without_desc() %>%
-      filter(!is.na(Vict.Descent) & Vict.Descent != "") %>%
-      group_by(Vict.Descent) %>%
-      summarize(count = n()) %>%
-      arrange(desc(count))
-    
-    selected_vict_descent <- input$vict.descent
-    
-    top_4 <- head(filter(data, Vict.Descent != "Other"), 4)
-    others <- data %>%
-      filter(!(Vict.Descent %in% top_4$Vict.Descent)) %>%
-      summarize(Vict.Descent = "Others", count = sum(count))
-    
-    if (selected_vict_descent != "All" && !selected_vict_descent %in% top_4$Vict.Descent) {
-      others_count <- others$count
-      selected_count <- data %>% filter(Vict.Descent == selected_vict_descent) %>% pull(count)
-      # Subtract the selected count from "Others" and add the fifth top to "Others"
-      others_count <- others_count - selected_count + top_4[4, "count"]
-      top_4 <- top_4[1:3, ]
-      top_4 <- bind_rows(top_4, data.frame(Vict.Descent = selected_vict_descent, count = selected_count))
-      final_data <- bind_rows(top_4, data.frame(Vict.Descent = "Others", count = others_count))
-    } else {
-      final_data <- bind_rows(top_4, others)
-    }
-    
-    final_data$Vict.Descent <- factor(final_data$Vict.Descent, levels = c(final_data$Vict.Descent[final_data$Vict.Descent != "Others"], "Others"))
-    
-    colors <- rep('rgb(31, 119, 180)', nrow(final_data))
-    colors[final_data$Vict.Descent == selected_vict_descent] <- 'rgb(255, 127, 14)'
-    
-    plot_ly(final_data, x = ~Vict.Descent, y = ~count, type = 'bar', name = 'Number of Crimes', marker = list(color = colors)) %>%
-      layout(title = "Number of Crimes by Victim Descent",
-             xaxis = list(title = "Victim Descent"),
-             yaxis = list(title = "Number of Crimes"),
-             margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4))
-  })
-  
+
+
+  # Map
   output$crimemap <- renderLeaflet({
     data <- filtered_data()
     if (is.null(data) || nrow(data) == 0) {
@@ -171,8 +272,8 @@ shinyServer(function(input, output, session) {
     }
     leaflet(data = data) %>%
       addTiles(
-        urlTemplate = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-        attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        urlTemplate = url_template,
+        attribution = attribution
       ) %>%
       setView(lng = -118.2437, lat = 34.0522, zoom = 9) %>%
       setMaxBounds(lng1 = -118.7, lat1 = 33.7, lng2 = -118.1, lat2 = 34.4) %>%
@@ -187,48 +288,4 @@ shinyServer(function(input, output, session) {
         clusterOptions = markerClusterOptions()
       )
   })
-  
-  observe({
-    data <- filtered_data()
-    proxy <- leafletProxy("crimemap")
-    proxy %>% clearMarkers()
-    if (!is.null(data) && nrow(data) > 0) {
-      proxy %>%
-        addCircleMarkers(
-          lng = data$LON,
-          lat = data$LAT,
-          popup = paste0("Popup window ", data$AREA.NAME),
-          clusterOptions = markerClusterOptions()
-        )
-    }
-  })
-  
-  observeEvent(input$vict.sex, {
-    if (input$vict.sex != "All") {
-      filtered_dataset <- dataset_map %>% filter(Vict.Sex == input$vict.sex)
-      descent <- unique(c("All", filtered_dataset$Vict.Descent))
-      updateSelectInput(session, "vict.descent", choices = descent)
-    } else {
-      descent <- unique(c("All", dataset_map$Vict.Descent))
-      updateSelectInput(session, "vict.descent", choices = descent)
-    }
-  })
-  
-  observeEvent(input$vict.descent, {
-    if (input$vict.descent != "All") {
-      filtered_dataset <- dataset_map %>% filter(Vict.Descent == input$vict.descent)
-      sex <- unique(c("All", filtered_dataset$Vict.Sex))
-      updateSelectInput(session, "vict.sex", choices = sex)
-    } else {
-      sex <- unique(c("All", dataset_map$Vict.Sex))
-      updateSelectInput(session, "vict.sex", choices = sex)
-    }
-  })
-  
-  
-  # Output table state for conditional panels
-  output$table_state <- reactive({
-    table_state()
-  })
-  outputOptions(output, "table_state", suspendWhenHidden = FALSE)
 })
