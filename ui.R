@@ -3,6 +3,10 @@ library(shiny)
 library(shinydashboard)
 library(DT)
 library(leaflet)
+library(plotly)
+
+# Predefined vector of possible values for "Vict Descent"
+vict_descent_choices <- c("All", "H", "W", "X", "B", "O", "A", "K", "F", "C", "J", "V", "I", "Z", "U", "P", "L", "D", "G", "S")
 
 # Define UI for application that displays a dashboard
 dashboardPage(
@@ -15,7 +19,9 @@ dashboardPage(
                   "Number of bins:",
                   min = 1,
                   max = 50,
-                  value = 30)
+                  value = 30),
+      selectInput("vict.descent", "Victim Descent:",
+                  choices = vict_descent_choices)
     )
   ),
   
@@ -35,9 +41,8 @@ dashboardPage(
     tabItems(
       tabItem(tabName = "dashboard",
               fluidRow(
-                box(title = "Total Customers", status = "primary", solidHeader = TRUE, plotOutput("plot1"), width = 4),
-                box(title = "Total Sales per Customer", status = "primary", solidHeader = TRUE, plotOutput("plot2"), width = 4),
-                box(title = "Customer Distribution by Sales", status = "primary", solidHeader = TRUE, plotOutput("plot3"), width = 4)
+                box(title = "Crimes Solved vs. Not Solved", status = "primary", solidHeader = TRUE, plotlyOutput("plot1"), width = 6),
+                box(title = "Number of Crimes by Victim Descent", status = "primary", solidHeader = TRUE, plotlyOutput("plot2"), width = 6)
               ),
               fluidRow(
                 box(title = "Top Customers", status = "primary", solidHeader = TRUE, leafletOutput("crimemap", height = 500)),
