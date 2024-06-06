@@ -6,7 +6,7 @@ library(leaflet)
 library(plotly)
 
 vict_descent_choices <- c("All", "Hispanic", "White", "Black", "Asian", "Korean", "Filipino", "Chinese", "Japanese", "Vietnamese", "Native", "Indian", "Hawaiian", "Pacific", "Laotian", "Cambodian", "Guamanian", "Samoan")
-vict_sex_choices <- c("All", "M", "F", "X")
+vict_sex_choices <- c("All", "M", "F", "X", "H")
 
 # Define UI for application that displays a dashboard
 dashboardPage(

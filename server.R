@@ -203,10 +203,26 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  observeEvent(input$vict.sex, {
+    if (input$vict.sex != "All") {
+      filtered_dataset <- dataset_map %>% filter(Vict.Sex == input$vict.sex)
+      descent <- unique(c("All", filtered_dataset$Vict.Descent))
+      updateSelectInput(session, "vict.descent", choices = descent)
+    } else {
+      descent <- unique(c("All", dataset_map$Vict.Descent))
+      updateSelectInput(session, "vict.descent", choices = descent)
+    }
+  })
+  
   observeEvent(input$vict.descent, {
-    filtered_dataset <- dataset_map %>% filter(Vict.Descent == input$vict.descent)
-    sex <- unique(c("All", filtered_dataset$Vict.Sex))
-    updateSelectInput(session, "vict.sex", choices = sex)
+    if (input$vict.descent != "All") {
+      filtered_dataset <- dataset_map %>% filter(Vict.Descent == input$vict.descent)
+      sex <- unique(c("All", filtered_dataset$Vict.Sex))
+      updateSelectInput(session, "vict.sex", choices = sex)
+    } else {
+      sex <- unique(c("All", dataset_map$Vict.Sex))
+      updateSelectInput(session, "vict.sex", choices = sex)
+    }
   })
   
   
