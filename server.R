@@ -14,7 +14,7 @@ dataset <- read.csv("data/dataset_recent.csv")
 
 # Truncated columns and NA values
 dataset_cut <- dataset %>%
-  select(c(AREA.NAME, LON, LAT, Vict.Descent, Status.Desc, Vict.Sex, Crm.Cd.Desc, month)) %>%
+  select(c(AREA.NAME, LON, LAT, Vict.Descent, Status.Desc, Vict.Sex, Crm.Cd.Desc, month, Date.Format, Premis.Desc, Weapon.Desc)) %>%
   na.omit() %>%
   filter(Vict.Descent != "")
 
@@ -149,31 +149,79 @@ shinyServer(function(input, output, session) {
   })
 
   output$monthly_comparison <- renderPlotly({
+    month_names <- c(
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    )
+
+    full_month_names <- c(
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    )
+
     data <- filtered_monthly_data()
     selected_area_name <- input$area.name
-    
-    p <- ggplot(data, aes(x = month)) +
-      geom_line(aes(y = `LA Average`, color = "LA Average"), size = 1.5) +
-      labs(title = "Monthly Crime Comparison",
-           x = "Month",
-           y = "Number of Crimes",
-           color = "Legend") +
-      theme_minimal() +
-      theme(legend.position = "bottom")
-    
+    x_axis_limits <- list(range = c(min(data$month) - 1.2, max(data$month) - 0.8))
+    data$month <- factor(data$month, levels = data$month, labels = month_names[data$month])
+    y_axis_limits <- list(range = c(0, max(data$`LA Average`, data$`Selected Area`, na.rm = TRUE) * 1.1))
+
+    p <- plot_ly(data, x = ~month) %>%
+      add_markers(
+        y = ~`LA Average`,
+        name = "LA Average",
+        line = list(color = "grey", width = 2.5),
+        marker = list(color = "grey", width = 6),
+        mode = "lines+markers",
+        hovertext = ~paste0(
+          "Month: ", full_month_names[which(month == month_names)], "<br>",
+          "LA Average", ": ", round(`LA Average`)
+        ),
+        hoverinfo = "text"
+      ) %>%
+      layout(title = "Monthly Crime Comparison",
+             xaxis = c(list(title = "Month", showline = FALSE, zeroline = FALSE), x_axis_limits),
+             yaxis = c(list(title = "Number of Crimes", showline = FALSE, zeroline = FALSE), y_axis_limits),
+             legend = list(title = list(text = "Legend"), orientation = "v", y = 1, x = 0.8),
+             showlegend = TRUE,
+             margin = list(b = 80))
+
     if (selected_area_name != "All") {
-      p <- p + geom_line(aes(y = `Selected Area`, color = selected_area_name), size = 1.5)
+      p <- p %>%
+        add_markers(
+          y = ~`Selected Area`,
+          name = selected_area_name,
+          line = list(color = "magenta", width = 2.5),
+          marker = list(color = "magenta", size = 6),
+          hovertext = ~paste0(
+            "Month: ", full_month_names[which(month == month_names)], "<br>",
+            selected_area_name, ": ", `Selected Area`
+          ),
+          hoverinfo = "text"
+        )
     }
-    
-    # Manually set colors, ensuring the selected area is magenta and LA Average is grey
-    colors <- c("LA Average" = "grey")
-    if (selected_area_name != "All") {
-      colors[selected_area_name] <- "magenta"
-    }
-    
-    p <- p + scale_color_manual(values = colors, labels = c("LA Average", selected_area_name))
-    
-    ggplotly(p)
+
+
+    p
   })
   
 
@@ -283,21 +331,23 @@ shinyServer(function(input, output, session) {
 
   output$manwoman <- renderPlotly({
     data <- filtered_data() %>%
-      filter(Vict.Sex == "M" | Vict.Sex == "F") %>%
+      filter(Vict.Sex == "Male" | Vict.Sex == "Female") %>%
       group_by(Vict.Sex) %>%
       summarize(count = n())
 
-    data$Vict.Sex <- factor(data$Vict.Sex, levels = c("M", "F"))
+    data$Vict.Sex <- factor(data$Vict.Sex, levels = c("Male", "Female"))
 
     colors <- rep("rgb(31, 119, 180)", nrow(data))
-    colors[data$Vict.Sex == "F"] <- "rgb(255, 127, 14)"
+    colors[data$Vict.Sex == "Female"] <- "rgb(255, 127, 14)"
     plot_ly(
       data,
       x = ~Vict.Sex,
       y = ~count,
       type = "bar",
       name = "Number of Crimes",
-      marker = list(color = colors)
+      marker = list(color = colors),
+      hovertext = ~paste0("Count: ", count),
+      hoverinfo = "text"
     ) %>%
       layout(
         title = "Number of Crimes by Victim Descent",
@@ -340,7 +390,9 @@ shinyServer(function(input, output, session) {
       y = ~Vict.Descent,
       type = "bar",
       name = "Number of Crimes",
-      marker = list(color = colors)
+      marker = list(color = colors),
+      hovertext = ~paste0("Count: ", count),
+      hoverinfo = "text"
     ) %>%
       layout(
         title = "Number of Crimes by Victim Descent",
@@ -392,7 +444,11 @@ shinyServer(function(input, output, session) {
         data = filtered_data(),
         lng = ~LON,
         lat = ~LAT,
-        popup = ~paste0("Popup window ", AREA.NAME),
+        popup = ~paste0("Crime: ", Crm.Cd.Desc, "<br>",
+                        "Date: ", Date.Format, "<br>",
+                        "Area: ", AREA.NAME, "<br>",
+                        "Premises: ", Premis.Desc, "<br>",
+                        "Weapon: ", Weapon.Desc),
         clusterOptions = markerClusterOptions()
       )
   })
