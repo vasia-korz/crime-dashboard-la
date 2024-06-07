@@ -99,9 +99,10 @@ dashboardPage(
             width = 4
           ),
           box(
-            title = "Temp",
+            title = "Monthly Crime Comparison",
             status = "primary",
             solidHeader = TRUE,
+            plotlyOutput("monthly_comparison"),
             width = 4
           )
         ),

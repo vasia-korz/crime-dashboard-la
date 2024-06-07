@@ -6,13 +6,14 @@ library(dplyr)
 library(leaflet)
 library(leaflet.extras)
 library(plotly)
+library(ggplot2)
 
 # Whole dataset
 dataset <- read.csv("data/dataset_recent.csv")
 
 # Truncated columns and NA values
 dataset_cut <- dataset %>%
-  select(c(AREA.NAME, LON, LAT, Vict.Descent, Status.Desc, Vict.Sex, Crm.Cd.Desc)) %>%
+  select(c(AREA.NAME, LON, LAT, Vict.Descent, Status.Desc, Vict.Sex, Crm.Cd.Desc, month)) %>%
   na.omit() %>%
   filter(Vict.Descent != "")
 
@@ -80,6 +81,49 @@ shinyServer(function(input, output, session) {
   })
 
   ### Datasets ###
+  
+  # Reactive function to filter data and calculate monthly average crimes
+  filtered_monthly_data <- reactive({
+    data <- dataset_cut %>%
+      group_by(month, AREA.NAME) %>%
+      summarize(count = n())
+    
+    la_average <- data %>%
+      group_by(month) %>%
+      summarize(avg_count = mean(count))
+    
+    if (input$area.name != "All") {
+      selected_area_data <- data %>%
+        filter(AREA.NAME == input$area.name) %>%
+        select(month, count)
+      selected_area_data <- merge(selected_area_data, la_average, by = "month", all.y = TRUE)
+      selected_area_data[is.na(selected_area_data)] <- 0
+      colnames(selected_area_data) <- c("month", "Selected Area", "LA Average")
+    } else {
+      selected_area_data <- la_average
+      colnames(selected_area_data) <- c("month", "LA Average")
+      selected_area_data$`Selected Area` <- selected_area_data$`LA Average`
+    }
+    print(selected_area_data)
+    selected_area_data
+  })
+  
+  # Line chart for monthly comparison
+  output$monthly_comparison <- renderPlotly({
+    data <- filtered_monthly_data()
+    
+    p <- ggplot(data, aes(x = month)) +
+      geom_line(aes(y = `Selected Area`, color = "Selected Area")) +
+      geom_line(aes(y = `LA Average`, color = "LA Average")) +
+      labs(title = "Monthly Crime Comparison",
+           x = "month",
+           y = "Number of Crimes",
+           color = "Legend") +
+      theme_minimal()
+    
+    ggplotly(p)
+  })
+  
 
   # General data
   filtered_data <- reactive({
