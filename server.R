@@ -190,8 +190,8 @@ shinyServer(function(input, output, session) {
       add_markers(
         y = ~`LA Average`,
         name = "LA Average",
-        line = list(color = "grey", width = 2.5),
-        marker = list(color = "grey", width = 6),
+        line = list(color = "grey", width = 2),
+        marker = list(color = "grey", size = 5),
         mode = "lines+markers",
         hovertext = ~paste0(
           "Month: ", full_month_names[which(month == month_names)], "<br>",
@@ -211,8 +211,8 @@ shinyServer(function(input, output, session) {
         add_markers(
           y = ~`Selected Area`,
           name = selected_area_name,
-          line = list(color = "magenta", width = 2.5),
-          marker = list(color = "magenta", size = 6),
+          line = list(color = "magenta", width = 2),
+          marker = list(color = "magenta", size = 5),
           hovertext = ~paste0(
             "Month: ", full_month_names[which(month == month_names)], "<br>",
             selected_area_name, ": ", `Selected Area`
