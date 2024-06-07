@@ -81,47 +81,47 @@ dashboardPage(
         tabName = "dashboard",
         fluidRow(
           box(
-            title = "Crimes Solved vs. Not Solved",
+            title = "Crimes Finishied vs. Not Finished",
             status = "primary",
             solidHeader = TRUE,
             plotlyOutput("plot1"),
-            width = 6
+            width = 4
           ),
           box(
             title = "Number of Crimes by Victim Descent",
             status = "primary",
             solidHeader = TRUE,
-            plotlyOutput("plot2"),
-            width = 6
+            width = 4
+          ),
+          box(
+            title = "Temp",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 4
           )
         ),
         fluidRow(
           box(
-            title = "Top Customers",
-            status = "primary",
-            solidHeader = TRUE,
-            leafletOutput("crimemap", height = 500)
-          ),
-          box(
             title = "Sales per Customer by Category",
             status = "primary",
             solidHeader = TRUE,
-            conditionalPanel(
-              condition = "output.table_state == 'full'",
-              dataTableOutput("full_table")
-            ),
-            conditionalPanel(
-              condition = "output.table_state == 'short'",
-              fluidRow(
-                column(6, dataTableOutput("short_table")),
-                column(6, div(
-                  id = "additional_content",
-                  "Additional content here"
-                ))
-              )
-            ),
-            width = 6
+            dataTableOutput("full_table"),
+            width = 4
           ),
+          box(
+            title = "Top Customers",
+            status = "primary",
+            solidHeader = TRUE,
+            leafletOutput("crimemap", height = 500),
+            width = 4
+          ),
+          box(
+            title = "Number of crimers by Victim Descent",
+            status = "primary",
+            solidHeader = TRUE,
+            plotlyOutput("plot2"),
+            width = 4
+          )
         )
       )
     )

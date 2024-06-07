@@ -215,20 +215,16 @@ shinyServer(function(input, output, session) {
 
   # Full table
   output$full_table <- renderDataTable({
-    data <- filtered_areas_df()
+    data <- filtered_areas_df() %>%
+      select(AREA.NAME, count)
     if (is.null(data)) {
       return(NULL)
     }
-    datatable(data, selection = "single", options = list(pageLength = 10))
-  })
-
-  # Short table
-  output$short_table <- renderDataTable({
-    data <- filtered_areas_df()
-    if (is.null(data)) {
-      return(NULL)
-    }
-    datatable(data[, c("AREA.NAME", "count")], selection = "single", options = list(pageLength = 10))
+    datatable(data, selection = "single", options = list(
+      scrollX = TRUE,
+      scrollY = "400px",
+      paging = FALSE
+    ))
   })
 
   # Observe full table selection
@@ -243,24 +239,6 @@ shinyServer(function(input, output, session) {
       leafletProxy("crimemap") %>%
         setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
     }
-  })
-
-  # Observe short table selection
-  observeEvent(input$short_table_rows_selected, {
-    selected_row <- input$short_table_rows_selected
-
-    if (length(selected_row)) {
-      data <- filtered_areas_df()
-      selected_row <- data[selected_row, ]
-
-      leafletProxy("crimemap") %>%
-        setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
-    }
-  })
-
-  # Reset short table
-  observeEvent(input$esc_key, {
-    table_state("full")
   })
 
 
