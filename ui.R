@@ -90,6 +90,7 @@ dashboardPage(
           box(
             title = "Number of Crimes by Victim Descent",
             status = "primary",
+            plotlyOutput("manwoman"),
             solidHeader = TRUE,
             width = 4
           ),
@@ -106,21 +107,21 @@ dashboardPage(
             status = "primary",
             solidHeader = TRUE,
             dataTableOutput("full_table"),
-            width = 4
+            width = 3
           ),
           box(
             title = "Top Customers",
             status = "primary",
             solidHeader = TRUE,
             leafletOutput("crimemap", height = 500),
-            width = 4
+            width = 6
           ),
           box(
             title = "Number of crimers by Victim Descent",
             status = "primary",
             solidHeader = TRUE,
             plotlyOutput("plot2"),
-            width = 4
+            width = 3
           )
         )
       )
