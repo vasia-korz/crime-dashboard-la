@@ -61,11 +61,23 @@ shinyServer(function(input, output, session) {
   observeEvent(input$area.name, {
     data = NULL
     if (input$area.name != "All") {
-      data = dataset_cut %>%
+
+      data_areas <- filtered_areas_df()
+      if (!is.null(data_areas) && nrow(data_areas) > 0) {
+        selected_row <- data_areas %>% filter(AREA.NAME == input$area.name)
+        if (nrow(selected_row) > 0) {
+          selected_index <- which(data_areas$AREA.NAME == input$area.name)
+          selectRows(proxy = dataTableProxy('full_table'), selected = selected_index)
+        }
+      }
+
+      data <- dataset_cut %>%
         filter(AREA.NAME == input$area.name) %>%
         pull(Crm.Cd.Desc)
     } else {
-      data = dataset_cut %>%
+      selectRows(proxy = dataTableProxy('full_table'), selected = NULL)
+
+      data <- dataset_cut %>%
         pull(Crm.Cd.Desc)
     }
     
@@ -217,13 +229,6 @@ shinyServer(function(input, output, session) {
       )
   })
 
-  # Table view
-  table_state <- reactiveVal("full")
-  output$table_state <- reactive({
-    table_state()
-  })
-  outputOptions(output, "table_state", suspendWhenHidden = FALSE)
-
   # Full table
   output$full_table <- renderDataTable({
     data <- filtered_areas_df() %>%
@@ -243,52 +248,38 @@ shinyServer(function(input, output, session) {
     selected_row <- input$full_table_rows_selected
 
     if (length(selected_row)) {
-      table_state("short")
       data <- filtered_areas_df()
       selected_row <- data[selected_row, ]
 
-      leafletProxy("crimemap") %>%
-        setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
-    }
-  })
-  
-  observeEvent(input$area.name, {
-    if (input$area.name != "All") {
-      data <- filtered_areas_df()
-      if (!is.null(data) && nrow(data) > 0) {
-        selected_row <- data %>% filter(AREA.NAME == input$area.name)
-        if (nrow(selected_row) > 0) {
-          selected_index <- which(data$AREA.NAME == input$area.name)
-          selectRows(proxy = dataTableProxy('full_table'), selected = selected_index)
-        }
-      }
-    } else {
-      selectRows(proxy = dataTableProxy('full_table'), selected = NULL)
-    }
-  })
-  
-  observeEvent(input$full_table_rows_selected, {
-    selected_row <- input$full_table_rows_selected
-    
-    if (length(selected_row)) {
-      data <- filtered_areas_df()
-      selected_row <- data[selected_row, ]
-      
       updateSelectInput(
         session,
         "area.name",
         selected = selected_row$AREA.NAME
       )
-      
+
       leafletProxy("crimemap") %>%
         setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
     }
   })
 
 
+  observe({
+    leafletProxy("crimemap") %>%
+      clearMarkers() %>%
+      clearMarkerClusters() %>%
+      addCircleMarkers(
+        data = filtered_data(),
+        lng = ~LON,
+        lat = ~LAT,
+        popup = ~paste0("Popup window ", AREA.NAME),
+        clusterOptions = markerClusterOptions()
+      )
+  })
+
+
   # Map
   output$crimemap <- renderLeaflet({
-    data <- filtered_data()
+    data <- dataset_cut
     if (is.null(data) || nrow(data) == 0) {
       return(leaflet() %>% addTiles())
     }
