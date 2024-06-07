@@ -7,6 +7,7 @@ library(leaflet)
 library(leaflet.extras)
 library(plotly)
 library(ggplot2)
+library(tidyr)
 
 # Whole dataset
 dataset <- read.csv("data/dataset_recent.csv")
@@ -96,18 +97,45 @@ shinyServer(function(input, output, session) {
   
   # Reactive function to filter data and calculate monthly average crimes
   filtered_monthly_data <- reactive({
-    data <- dataset_cut %>%
+    summarized_data <- filtered_data() %>%
       group_by(month, AREA.NAME) %>%
-      summarize(count = n())
+      summarize(total_count = n(), .groups = 'drop')
+
+    summarized_data$total_count <- as.numeric(summarized_data$total_count)
     
-    la_average <- data %>%
+    unique_months <- c(1, 2, 3, 4, 5)
+    unique_areas <- c('N Hollywood', 'Hollywood', '77th Street', 'Van Nuys', 'Southeast',
+                      'Southwest', 'Central', 'Pacific', 'Wilshire', 'Northeast', 'Newton', 'Olympic',
+                      'Rampart', 'Mission', 'Topanga', 'Devonshire', 'Hollenbeck', 'West Valley',
+                      'Harbor', 'West LA', 'Foothill')
+    
+    all_combinations <- expand.grid(month = unique_months, AREA.NAME = unique_areas)
+    
+    complete_data <- all_combinations %>%
+      left_join(summarized_data, by = c("month", "AREA.NAME")) %>%
+      replace_na(list(total_count = 0))
+    
+    unfiltered_data <- filtered_data_without_area()
+    
+    if (!"count" %in% colnames(unfiltered_data)) {
+      unfiltered_data <- unfiltered_data %>%
+        group_by(month) %>%
+        summarise(count = n(), .groups = 'drop')
+    }
+    unfiltered_data$count <- as.numeric(unfiltered_data$count)
+
+    la_average <- unfiltered_data %>%
       group_by(month) %>%
-      summarize(avg_count = mean(count))
+      summarize(avg_count = mean(count, na.rm = TRUE), .groups = 'drop')
+    
+    la_average$avg_count = la_average$avg_count / length(unique_areas)
     
     if (input$area.name != "All") {
-      selected_area_data <- data %>%
+      selected_area_data <- complete_data %>%
         filter(AREA.NAME == input$area.name) %>%
-        select(month, count)
+        select(month, total_count) %>%
+        rename(`Selected Area` = total_count)
+      
       selected_area_data <- merge(selected_area_data, la_average, by = "month", all.y = TRUE)
       selected_area_data[is.na(selected_area_data)] <- 0
       colnames(selected_area_data) <- c("month", "Selected Area", "LA Average")
@@ -116,22 +144,34 @@ shinyServer(function(input, output, session) {
       colnames(selected_area_data) <- c("month", "LA Average")
       selected_area_data$`Selected Area` <- selected_area_data$`LA Average`
     }
-    print(selected_area_data)
-    selected_area_data
+    
+    return(selected_area_data)
   })
-  
-  # Line chart for monthly comparison
+
   output$monthly_comparison <- renderPlotly({
     data <- filtered_monthly_data()
+    selected_area_name <- input$area.name
     
     p <- ggplot(data, aes(x = month)) +
-      geom_line(aes(y = `Selected Area`, color = "Selected Area")) +
-      geom_line(aes(y = `LA Average`, color = "LA Average")) +
+      geom_line(aes(y = `LA Average`, color = "LA Average"), size = 1.5) +
       labs(title = "Monthly Crime Comparison",
-           x = "month",
+           x = "Month",
            y = "Number of Crimes",
            color = "Legend") +
-      theme_minimal()
+      theme_minimal() +
+      theme(legend.position = "bottom")
+    
+    if (selected_area_name != "All") {
+      p <- p + geom_line(aes(y = `Selected Area`, color = selected_area_name), size = 1.5)
+    }
+    
+    # Manually set colors, ensuring the selected area is magenta and LA Average is grey
+    colors <- c("LA Average" = "grey")
+    if (selected_area_name != "All") {
+      colors[selected_area_name] <- "magenta"
+    }
+    
+    p <- p + scale_color_manual(values = colors, labels = c("LA Average", selected_area_name))
     
     ggplotly(p)
   })
