@@ -172,6 +172,32 @@ shinyServer(function(input, output, session) {
       layout(title = "Crime status")
   })
 
+  output$manwoman <- renderPlotly({
+    data <- filtered_data() %>%
+      filter(Vict.Sex == "M" | Vict.Sex == "F") %>%
+      group_by(Vict.Sex) %>%
+      summarize(count = n())
+
+    data$Vict.Sex <- factor(data$Vict.Sex, levels = c("M", "F"))
+
+    colors <- rep("rgb(31, 119, 180)", nrow(data))
+    colors[data$Vict.Sex == "F"] <- "rgb(255, 127, 14)"
+    plot_ly(
+      data,
+      x = ~Vict.Sex,
+      y = ~count,
+      type = "bar",
+      name = "Number of Crimes",
+      marker = list(color = colors)
+    ) %>%
+      layout(
+        title = "Number of Crimes by Victim Descent",
+        xaxis = list(title = "Victim Descent"),
+        yaxis = list(title = "Number of Crimes"),
+        margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4)
+      )
+  })
+
   # Bar chart
   output$plot2 <- renderPlotly({
     data <- filtered_data() %>%
@@ -244,7 +270,7 @@ shinyServer(function(input, output, session) {
       )
   })
 
-  # Table view 
+  # Table view
   table_state <- reactiveVal("full")
   output$table_state <- reactive({
     table_state()
