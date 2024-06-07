@@ -28,45 +28,6 @@ attribution <- '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStr
 
 shinyServer(function(input, output, session) {
   ### Filters ###
-
-  # Limit choices from filter by vict.descent
-  # observeEvent(input$vict.descent, {
-  #   sex <- unique(c("All", if (input$vict.descent != "All") {
-  #     dataset_cut %>%
-  #       filter(Vict.Descent == input$vict.descent) %>%
-  #       pull(Vict.Sex)
-  #   } else {
-  #     dataset_cut$Vict.Sex
-  #   }))
-# 
-  #   updateSelectInput(
-  #     session,
-  #     "vict.sex",
-  #     choices = sex,
-  #     selected = input$vict.sex
-  #   )
-  # })
-# 
-  # # Limit choices from filter by sex
-  # observeEvent(input$vict.sex, {
-  #   descent <- unique(c("All", if (input$vict.sex != "All") {
-  #     dataset_cut %>%
-  #       filter(Vict.Sex == input$vict.sex) %>%
-  #       filter(Vict.Descent != "Other") %>%
-  #       pull(Vict.Descent)
-  #   } else {
-  #     dataset_cut %>%
-  #       filter(Vict.Descent != "Other") %>%
-  #       pull(Vict.Descent)
-  #   }))
-# 
-  #   updateSelectInput(
-  #     session,
-  #     "vict.descent",
-  #     choices = descent,
-  #     selected = input$vict.descent
-  #   )
-  # })
   
   # Limit choices from filter by area
   observeEvent(input$crm.cd.desc, {
@@ -85,18 +46,30 @@ shinyServer(function(input, output, session) {
       choices = area_name,
       selected = input$area.name
     )
+    
+    data <- filtered_areas_df()
+    if (!is.null(data) && nrow(data) > 0) {
+      selected_row <- data %>% filter(AREA.NAME == input$area.name)
+      if (nrow(selected_row) > 0) {
+        selected_index <- which(data$AREA.NAME == input$area.name)
+        selectRows(proxy = dataTableProxy('full_table'), selected = selected_index)
+      }
+    }
   })
   
   # Limit choices from filter by crime type
   observeEvent(input$area.name, {
-    crime_type <- unique(c("All", if (input$area.name != "All") {
-      dataset_cut %>%
+    data = NULL
+    if (input$area.name != "All") {
+      data = dataset_cut %>%
         filter(AREA.NAME == input$area.name) %>%
         pull(Crm.Cd.Desc)
     } else {
-      dataset_cut %>%
+      data = dataset_cut %>%
         pull(Crm.Cd.Desc)
-    }))
+    }
+    
+    crime_type <- unique(c("All", data))
     
     updateSelectInput(
       session,
@@ -124,18 +97,18 @@ shinyServer(function(input, output, session) {
   })
 
   # Bar chart data
-  # filtered_data_without_desc <- reactive({
-  #   # Apply the second filter if necessary
-  #   if (input$vict.sex != "All") {
-  #     dataset_cut %>% filter(Vict.Sex == input$vict.sex)
-  #   } else {
-  #     dataset_cut
-  #   }
-  # })
+  filtered_data_without_area <- reactive({
+    # Apply the second filter if necessary
+    if (input$crm.cd.desc != "All") {
+      dataset_cut %>% filter(Crm.Cd.Desc == input$crm.cd.desc)
+    } else {
+      dataset_cut
+    }
+  })
 
   # Table data
   filtered_areas_df <- reactive({
-    data <- filtered_data()
+    data <- filtered_data_without_area()
     if (is.null(data) || nrow(data) == 0) {
       return(NULL)
     }
@@ -214,33 +187,8 @@ shinyServer(function(input, output, session) {
     others <- data %>%
       filter(!(Vict.Descent %in% top$Vict.Descent)) %>%
       summarize(Vict.Descent = "Others", count = sum(count))
-
-    # if not in top
-    # if (selected_vict_descent != "All" &&
-    #       !selected_vict_descent %in% top$Vict.Descent) {
-    #   others_count <- others$count
-    #   selected_count <- data %>%
-    #     filter(Vict.Descent == selected_vict_descent) %>%
-    #     pull(count)
-# 
-    #   # Compensate
-    #   others_count <- others_count - selected_count + top[n, "count"]
-    #   top <- top[1:n - 1, ]
-# 
-    #   selected_df <- data.frame(
-    #     Vict.Descent = selected_vict_descent,
-    #     count = selected_count
-    #   )
-# 
-    #   others_df <- data.frame(
-    #     Vict.Descent = "Others",
-    #     count = others_count
-    #   )
-# 
-    #   final_data <- bind_rows(top, selected_df, others_df)
-    # } else {
+    
     final_data <- bind_rows(top, others)
-    # }
 
     # Move "Others" to end
     final_data$Vict.Descent <- factor(
@@ -252,7 +200,6 @@ shinyServer(function(input, output, session) {
     )
 
     colors <- rep("rgb(31, 119, 180)", nrow(final_data))
-    # colors[final_data$Vict.Descent == selected_vict_descent] <- "rgb(255, 127, 14)"
 
     plot_ly(
       final_data,
@@ -300,6 +247,39 @@ shinyServer(function(input, output, session) {
       data <- filtered_areas_df()
       selected_row <- data[selected_row, ]
 
+      leafletProxy("crimemap") %>%
+        setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
+    }
+  })
+  
+  observeEvent(input$area.name, {
+    if (input$area.name != "All") {
+      data <- filtered_areas_df()
+      if (!is.null(data) && nrow(data) > 0) {
+        selected_row <- data %>% filter(AREA.NAME == input$area.name)
+        if (nrow(selected_row) > 0) {
+          selected_index <- which(data$AREA.NAME == input$area.name)
+          selectRows(proxy = dataTableProxy('full_table'), selected = selected_index)
+        }
+      }
+    } else {
+      selectRows(proxy = dataTableProxy('full_table'), selected = NULL)
+    }
+  })
+  
+  observeEvent(input$full_table_rows_selected, {
+    selected_row <- input$full_table_rows_selected
+    
+    if (length(selected_row)) {
+      data <- filtered_areas_df()
+      selected_row <- data[selected_row, ]
+      
+      updateSelectInput(
+        session,
+        "area.name",
+        selected = selected_row$AREA.NAME
+      )
+      
       leafletProxy("crimemap") %>%
         setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
     }
