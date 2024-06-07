@@ -26,7 +26,11 @@ vict_descent_choices <- c(
   "Samoan"
 )
 
-vict_sex_choices <- c("All", "M", "F", "X", "H")
+area_choices <- c('All', 'N Hollywood', 'Hollywood', '77th Street', 'Van Nuys', 'Southeast',
+                        'Southwest', 'Central', 'Pacific', 'Wilshire', 'Northeast', 'Newton', 'Olympic',
+                        'Rampart', 'Mission', 'Topanga', 'Devonshire', 'Hollenbeck', 'West Valley',
+                        'Harbor', 'West LA', 'Foothill')
+crime_choices <- c('All', 'Mixed', 'Fraud', 'Property', 'Violent', 'Sexual')
 
 # Define UI for application that displays a dashboard
 dashboardPage(
@@ -62,16 +66,16 @@ dashboardPage(
     fluidRow(
       box(width = 3,
         selectInput(
-          "vict.descent",
-          "Victim Descent:",
-          choices = vict_descent_choices
+          "area.name",
+          "Area name:",
+          choices = area_choices
         ),
       ),
       box(width = 3,
         selectInput(
-          "vict.sex",
-          "Victim Sex:",
-          choices = vict_sex_choices
+          "crm.cd.desc",
+          "Crime type:",
+          choices = crime_choices
         ),
       )
     ),
