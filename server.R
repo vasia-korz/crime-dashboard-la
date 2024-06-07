@@ -62,11 +62,23 @@ shinyServer(function(input, output, session) {
   observeEvent(input$area.name, {
     data = NULL
     if (input$area.name != "All") {
-      data = dataset_cut %>%
+
+      data_areas <- filtered_areas_df()
+      if (!is.null(data_areas) && nrow(data_areas) > 0) {
+        selected_row <- data_areas %>% filter(AREA.NAME == input$area.name)
+        if (nrow(selected_row) > 0) {
+          selected_index <- which(data_areas$AREA.NAME == input$area.name)
+          selectRows(proxy = dataTableProxy('full_table'), selected = selected_index)
+        }
+      }
+
+      data <- dataset_cut %>%
         filter(AREA.NAME == input$area.name) %>%
         pull(Crm.Cd.Desc)
     } else {
-      data = dataset_cut %>%
+      selectRows(proxy = dataTableProxy('full_table'), selected = NULL)
+
+      data <- dataset_cut %>%
         pull(Crm.Cd.Desc)
     }
     
@@ -221,52 +233,39 @@ shinyServer(function(input, output, session) {
       filter(!is.na(Vict.Descent) & Vict.Descent != "") %>%
       group_by(Vict.Descent) %>%
       summarize(count = n()) %>%
-      arrange(desc(count))
+      arrange(count)
 
     # selected_vict_descent <- input$vict.descent
 
-    n <- 4
+    n <- 5
     top <- head(filter(data, Vict.Descent != "Other"), n)
 
-    others <- data %>%
-      filter(!(Vict.Descent %in% top$Vict.Descent)) %>%
-      summarize(Vict.Descent = "Others", count = sum(count))
-    
-    final_data <- bind_rows(top, others)
-
     # Move "Others" to end
-    final_data$Vict.Descent <- factor(
-      final_data$Vict.Descent,
+    top$Vict.Descent <- factor(
+      top$Vict.Descent,
       levels = c(
-        final_data$Vict.Descent[final_data$Vict.Descent != "Others"],
+        top$Vict.Descent[top$Vict.Descent != "Others"],
         "Others"
       )
     )
 
-    colors <- rep("rgb(31, 119, 180)", nrow(final_data))
+    colors <- rep("rgb(31, 119, 180)", nrow(top))
 
     plot_ly(
-      final_data,
-      x = ~Vict.Descent,
-      y = ~count,
+      top,
+      x = ~count,
+      y = ~Vict.Descent,
       type = "bar",
       name = "Number of Crimes",
       marker = list(color = colors)
     ) %>%
       layout(
         title = "Number of Crimes by Victim Descent",
-        xaxis = list(title = "Victim Descent"),
-        yaxis = list(title = "Number of Crimes"),
+        xaxis = list(title = "Number of Crimes"),
+        yaxis = list(title = "Victim Descent"),
         margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4)
       )
   })
-
-  # Table view
-  table_state <- reactiveVal("full")
-  output$table_state <- reactive({
-    table_state()
-  })
-  outputOptions(output, "table_state", suspendWhenHidden = FALSE)
 
   # Full table
   output$full_table <- renderDataTable({
@@ -287,52 +286,38 @@ shinyServer(function(input, output, session) {
     selected_row <- input$full_table_rows_selected
 
     if (length(selected_row)) {
-      table_state("short")
       data <- filtered_areas_df()
       selected_row <- data[selected_row, ]
 
-      leafletProxy("crimemap") %>%
-        setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
-    }
-  })
-  
-  observeEvent(input$area.name, {
-    if (input$area.name != "All") {
-      data <- filtered_areas_df()
-      if (!is.null(data) && nrow(data) > 0) {
-        selected_row <- data %>% filter(AREA.NAME == input$area.name)
-        if (nrow(selected_row) > 0) {
-          selected_index <- which(data$AREA.NAME == input$area.name)
-          selectRows(proxy = dataTableProxy('full_table'), selected = selected_index)
-        }
-      }
-    } else {
-      selectRows(proxy = dataTableProxy('full_table'), selected = NULL)
-    }
-  })
-  
-  observeEvent(input$full_table_rows_selected, {
-    selected_row <- input$full_table_rows_selected
-    
-    if (length(selected_row)) {
-      data <- filtered_areas_df()
-      selected_row <- data[selected_row, ]
-      
       updateSelectInput(
         session,
         "area.name",
         selected = selected_row$AREA.NAME
       )
-      
+
       leafletProxy("crimemap") %>%
         setView(lng = selected_row$lon, lat = selected_row$lat, zoom = 12)
     }
   })
 
 
+  observe({
+    leafletProxy("crimemap") %>%
+      clearMarkers() %>%
+      clearMarkerClusters() %>%
+      addCircleMarkers(
+        data = filtered_data(),
+        lng = ~LON,
+        lat = ~LAT,
+        popup = ~paste0("Popup window ", AREA.NAME),
+        clusterOptions = markerClusterOptions()
+      )
+  })
+
+
   # Map
   output$crimemap <- renderLeaflet({
-    data <- filtered_data()
+    data <- dataset_cut
     if (is.null(data) || nrow(data) == 0) {
       return(leaflet() %>% addTiles())
     }
