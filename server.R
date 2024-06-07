@@ -189,42 +189,36 @@ shinyServer(function(input, output, session) {
       filter(!is.na(Vict.Descent) & Vict.Descent != "") %>%
       group_by(Vict.Descent) %>%
       summarize(count = n()) %>%
-      arrange(desc(count))
+      arrange(count)
 
     # selected_vict_descent <- input$vict.descent
 
-    n <- 4
+    n <- 5
     top <- head(filter(data, Vict.Descent != "Other"), n)
 
-    others <- data %>%
-      filter(!(Vict.Descent %in% top$Vict.Descent)) %>%
-      summarize(Vict.Descent = "Others", count = sum(count))
-    
-    final_data <- bind_rows(top, others)
-
     # Move "Others" to end
-    final_data$Vict.Descent <- factor(
-      final_data$Vict.Descent,
+    top$Vict.Descent <- factor(
+      top$Vict.Descent,
       levels = c(
-        final_data$Vict.Descent[final_data$Vict.Descent != "Others"],
+        top$Vict.Descent[top$Vict.Descent != "Others"],
         "Others"
       )
     )
 
-    colors <- rep("rgb(31, 119, 180)", nrow(final_data))
+    colors <- rep("rgb(31, 119, 180)", nrow(top))
 
     plot_ly(
-      final_data,
-      x = ~Vict.Descent,
-      y = ~count,
+      top,
+      x = ~count,
+      y = ~Vict.Descent,
       type = "bar",
       name = "Number of Crimes",
       marker = list(color = colors)
     ) %>%
       layout(
         title = "Number of Crimes by Victim Descent",
-        xaxis = list(title = "Victim Descent"),
-        yaxis = list(title = "Number of Crimes"),
+        xaxis = list(title = "Number of Crimes"),
+        yaxis = list(title = "Victim Descent"),
         margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4)
       )
   })
