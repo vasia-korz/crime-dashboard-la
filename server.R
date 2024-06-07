@@ -152,8 +152,6 @@ shinyServer(function(input, output, session) {
     }
   }
 
-  safety_percentage <- 23
-
   output$safetyBox <- renderUI({
     percentages <- filtered_areas_df() %>%
       mutate(count = count - min(count)) %>%
@@ -163,7 +161,7 @@ shinyServer(function(input, output, session) {
     selected_index <- which(filtered_areas_df()$AREA.NAME == input$area.name)
     safety_percentage <- percentages[selected_index]
 
-    safety_percentage <- round(safety_percentage * 100)
+    safety_percentage <- round(100 - safety_percentage * 100)
 
     div(class = paste("large-box", getSafetyClass(safety_percentage)),
       icon("shield-alt", class = "icon-large"),
