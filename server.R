@@ -131,6 +131,48 @@ shinyServer(function(input, output, session) {
 
   ### Plots ###
 
+  # safety index
+  getSafetyLabel <- function(safety_percentage) {
+    if (safety_percentage > 80) {
+      return("Pretty Safe")
+    } else if (safety_percentage > 50) {
+      return("Moderately Safe")
+    } else {
+      return("Dangerous")
+    }
+  }
+
+  getSafetyClass <- function(safety_percentage) {
+    if (safety_percentage > 80) {
+      return("pretty-safe")
+    } else if (safety_percentage > 50) {
+      return("moderately-safe")
+    } else {
+      return("dangerous")
+    }
+  }
+
+  safety_percentage <- 23
+
+  output$safetyBox <- renderUI({
+    percentages <- filtered_areas_df() %>%
+      mutate(count = count - min(count)) %>%
+      mutate(count = count / max(count)) %>%
+      pull(count)
+
+    selected_index <- which(filtered_areas_df()$AREA.NAME == input$area.name)
+    safety_percentage <- percentages[selected_index]
+
+    safety_percentage <- round(safety_percentage * 100)
+
+    div(class = paste("large-box", getSafetyClass(safety_percentage)),
+      icon("shield-alt", class = "icon-large"),
+      div(class = "value-large", paste0(safety_percentage, "%")),
+      div(class = "label-large", getSafetyLabel(safety_percentage))
+    )
+  })
+
+
   # Pie chart
   output$plot1 <- renderPlotly({
     data <- filtered_data()
