@@ -154,6 +154,7 @@ shinyServer(function(input, output, session) {
     
     p <- ggplot(data, aes(x = month)) +
       geom_line(aes(y = `LA Average`, color = "LA Average"), size = 1.5) +
+      geom_point(aes(y = `LA Average`, color = "LA Average"), size = 5) +  # Add points for LA Average
       labs(title = "Monthly Crime Comparison",
            x = "Month",
            y = "Number of Crimes",
@@ -162,7 +163,8 @@ shinyServer(function(input, output, session) {
       theme(legend.position = "bottom")
     
     if (selected_area_name != "All") {
-      p <- p + geom_line(aes(y = `Selected Area`, color = selected_area_name), size = 1.5)
+      p <- p + geom_line(aes(y = `Selected Area`, color = selected_area_name), size = 1.5) +
+        geom_point(aes(y = `Selected Area`, color = selected_area_name), size = 5)  # Add points for Selected Area
     }
     
     # Manually set colors, ensuring the selected area is magenta and LA Average is grey
@@ -175,6 +177,7 @@ shinyServer(function(input, output, session) {
     
     ggplotly(p)
   })
+  
   
 
   # General data
@@ -252,33 +255,6 @@ shinyServer(function(input, output, session) {
       div(class = "value-large", paste0(safety_percentage, "%")),
       div(class = "label-large", getSafetyLabel(safety_percentage))
     )
-  })
-
-
-  # Pie chart
-  output$plot1 <- renderPlotly({
-    data <- filtered_data()
-
-    if (is.null(data) || nrow(data) == 0) {
-      return(NULL)
-    }
-
-    finished_label <- c(
-      "Adult Arrest",
-      "Juv Arrest",
-      "Juv Other",
-      "Adult Other"
-    )
-
-    finished <- sum(data$Status.Desc %in% finished_label)
-    investigation_continued <- sum(!data$Status.Desc %in% finished_label)
-
-    plot_ly(
-      labels = c("Finished", "Investigation Continuing"),
-      values = c(finished, investigation_continued),
-      type = "pie"
-    ) %>%
-      layout(title = "Crime status")
   })
 
   output$manwoman <- renderPlotly({
