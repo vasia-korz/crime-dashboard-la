@@ -313,12 +313,15 @@ shinyServer(function(input, output, session) {
       filter(!is.na(Vict.Descent) & Vict.Descent != "") %>%
       group_by(Vict.Descent) %>%
       summarize(count = n()) %>%
-      arrange(count)
+      arrange(desc(count))
 
     # selected_vict_descent <- input$vict.descent
 
     n <- 5
-    top <- head(filter(data, Vict.Descent != "Other"), n)
+    top <- data %>%
+      filter(Vict.Descent != "Other") %>%
+      head(n) %>%
+      arrange(count)
 
     # Move "Others" to end
     top$Vict.Descent <- factor(
