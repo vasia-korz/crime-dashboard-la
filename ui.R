@@ -59,7 +59,33 @@ dashboardPage(
         .main-header .sidebar-toggle {
           display: none;
         }
-        "
+        .large-box {
+          font-size: 50px;
+          text-align: center;
+          padding: 40px;
+          border-radius: 10px;
+          margin: 20px;
+          color: white;
+        }
+        .icon-large {
+          font-size: 70px;
+        }
+        .value-large {
+          font-size: 80px;
+        }
+        .label-large {
+          font-size: 40px;
+        }
+        .pretty-safe {
+          background-color: green;
+        }
+        .moderately-safe {
+          background-color: yellow;
+          color: black;
+        }
+        .dangerous {
+          background-color: red;
+        }"
       ))
     ),
 
@@ -88,7 +114,7 @@ dashboardPage(
             title = "Crimes Finishied vs. Not Finished",
             status = "primary",
             solidHeader = TRUE,
-            plotlyOutput("plot1"),
+            uiOutput("safetyBox"),
             width = 4
           ),
           box(
