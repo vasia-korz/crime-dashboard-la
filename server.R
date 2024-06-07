@@ -150,80 +150,64 @@ shinyServer(function(input, output, session) {
 
   output$monthly_comparison <- renderPlotly({
     month_names <- c(
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec"
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     )
-
+    
     full_month_names <- c(
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December"
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
     )
-
+    
     data <- filtered_monthly_data()
     selected_area_name <- input$area.name
-
+    
     x_axis_limits <- list(range = c(min(data$month) - 1.2, max(data$month) - 0.8))
     data$month <- factor(data$month, levels = data$month, labels = month_names[data$month])
     y_axis_limits <- list(range = c(0, max(data$`LA Average`, data$`Selected Area`, na.rm = TRUE) * 1.1))
-
+    
     p <- plot_ly(data, x = ~month) %>%
       add_markers(
         y = ~`LA Average`,
         name = "LA Average",
-        line = list(color = "grey", width = 2),
-        marker = list(color = "grey", size = 5),
+        line = list(color = "grey", width = 4),
+        marker = list(color = "grey", size = 8),
         mode = "lines+markers",
         hovertext = ~paste0(
-          "Month: ", full_month_names[which(month == month_names)], "<br>",
-          "LA Average", ": ", round(`LA Average`)
+          "Month: ", full_month_names[as.integer(month)], "<br>",
+          "LA Average: ", round(`LA Average`)
         ),
         hoverinfo = "text"
       ) %>%
-      layout(title = "Monthly Crime Comparison",
-             xaxis = c(list(title = "Month", showline = FALSE, zeroline = FALSE), x_axis_limits),
-             yaxis = c(list(title = "Number of Crimes", showline = FALSE, zeroline = FALSE), y_axis_limits),
-             legend = list(title = list(text = "Legend"), orientation = "v", y = 1, x = 0.8),
-             showlegend = TRUE,
-             margin = list(b = 80))
-
+      layout(
+        title = "",
+        xaxis = list(title = "", showline = FALSE, zeroline = FALSE, range = x_axis_limits$range,
+                     showgrid = FALSE, tickangle = 0),
+        yaxis = list(title = "", showline = FALSE, zeroline = FALSE, range = y_axis_limits$range,
+                     showgrid = FALSE),
+        legend = list(title = list(text = ""), orientation = "h", y = -0.2, x = 0.5, xanchor = "center"),
+        showlegend = TRUE,
+        margin = list(b = 50, t = 20, l = 50, r = 50)
+      )
+    
     if (selected_area_name != "All") {
       p <- p %>%
         add_markers(
           y = ~`Selected Area`,
           name = selected_area_name,
-          line = list(color = "magenta", width = 2),
-          marker = list(color = "magenta", size = 5),
+          line = list(color = "magenta", width = 4),
+          marker = list(color = "magenta", size = 8),
           hovertext = ~paste0(
-            "Month: ", full_month_names[which(month == month_names)], "<br>",
+            "Month: ", full_month_names[as.integer(month)], "<br>",
             selected_area_name, ": ", `Selected Area`
           ),
           hoverinfo = "text"
         )
     }
-
-
     p
   })
+  
+  
   
   
 
@@ -309,28 +293,41 @@ shinyServer(function(input, output, session) {
       filter(Vict.Sex == "Male" | Vict.Sex == "Female") %>%
       group_by(Vict.Sex) %>%
       summarize(count = n())
-
+    
     data$Vict.Sex <- factor(data$Vict.Sex, levels = c("Male", "Female"))
-
-    colors <- rep("rgb(31, 119, 180)", nrow(data))
-    colors[data$Vict.Sex == "Female"] <- "rgb(255, 127, 14)"
+    
+    colors <- c("#4169E1FF", "#FF5733FF")
+    names(colors) <- c("Male", "Female")
+    
     plot_ly(
       data,
       x = ~Vict.Sex,
       y = ~count,
       type = "bar",
-      name = "Number of Crimes",
-      marker = list(color = colors),
+      marker = list(color = ~colors[Vict.Sex]),
       hovertext = ~paste0("Count: ", count),
       hoverinfo = "text"
     ) %>%
       layout(
-        title = "Number of Crimes by Victim Descent",
-        xaxis = list(title = "Victim Descent"),
-        yaxis = list(title = "Number of Crimes"),
-        margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4)
+        title = "",
+        xaxis = list(
+          title = "",
+          showline = FALSE,
+          zeroline = FALSE,
+          showgrid = FALSE
+        ),
+        yaxis = list(
+          title = "",
+          showline = FALSE,
+          zeroline = FALSE,
+          showgrid = FALSE
+        ),
+        margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
+        showlegend = FALSE,
+        bargap = 0.2
       )
   })
+  
 
   # Bar chart
   output$plot2 <- renderPlotly({
@@ -339,15 +336,13 @@ shinyServer(function(input, output, session) {
       group_by(Vict.Descent) %>%
       summarize(count = n()) %>%
       arrange(desc(count))
-
-    # selected_vict_descent <- input$vict.descent
-
+    
     n <- 5
     top <- data %>%
       filter(Vict.Descent != "Other") %>%
       head(n) %>%
       arrange(count)
-
+    
     # Move "Others" to end
     top$Vict.Descent <- factor(
       top$Vict.Descent,
@@ -356,26 +351,39 @@ shinyServer(function(input, output, session) {
         "Others"
       )
     )
-
-    colors <- rep("rgb(31, 119, 180)", nrow(top))
-
+    
     plot_ly(
       top,
       x = ~count,
       y = ~Vict.Descent,
       type = "bar",
-      name = "Number of Crimes",
-      marker = list(color = colors),
+      marker = list(
+        color = "lightgrey"
+      ),
       hovertext = ~paste0("Count: ", count),
       hoverinfo = "text"
     ) %>%
       layout(
-        title = "Number of Crimes by Victim Descent",
-        xaxis = list(title = "Number of Crimes"),
-        yaxis = list(title = "Victim Descent"),
-        margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4)
+        title = "",
+        xaxis = list(
+          title = "",
+          showline = FALSE,
+          zeroline = FALSE,
+          showgrid = FALSE
+        ),
+        yaxis = list(
+          title = "",
+          showline = FALSE,
+          zeroline = FALSE,
+          showgrid = FALSE
+        ),
+        margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
+        showlegend = FALSE,
+        bargap = 0.2
       )
   })
+  
+  
 
   # Full table
   output$full_table <- renderDataTable({
@@ -384,7 +392,7 @@ shinyServer(function(input, output, session) {
     if (is.null(data)) {
       return(NULL)
     }
-    datatable(data, selection = "single", options = list(
+    datatable(data, selection = "single", style = "bootstrap", options = list(
       scrollX = TRUE,
       scrollY = "400px",
       paging = FALSE

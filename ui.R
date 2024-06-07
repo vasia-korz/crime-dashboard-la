@@ -167,7 +167,8 @@ dashboardPage(
           height: 100% !important;
         }
         
-        .second-row .col-sm-3,
+        .second-row .col-sm-3, .second-row .col-sm-12,
+        .second-row .row:nth-of-type(2),
         .second-row .box.box-solid.box-primary,
         .second-row .box-body, 
         .second-row .dataTables_wrapper, 
@@ -202,33 +203,43 @@ dashboardPage(
           text-align: center;
         }
         
+        .header-row {
+          height: 10vh;
+        }
+        
+        table.dataTable tr.active td, table.dataTable tr.active {
+          box-shadow: inset 0 0 0 9999px magenta !important;
+        }
+        
         "
       ))
     ),
     
-    fluidRow(
-      column(3,
-             div(class = "dropdown",
-                 selectInput(
-                   "area.name",
-                   "Area name:",
-                   choices = area_choices
-                 )
-             )
-      ),
-      column(3,
-             div(class = "dropdown",
-                 selectInput(
-                   "crm.cd.desc",
-                   "Crime type:",
-                   choices = crime_choices
-                 )
-             )
-      ),
-      column(6,
-             div(class = "header-text",
-                 "LA Area Advisor"
-             )
+    div(class = "header-row",
+      fluidRow(
+        column(3,
+               div(class = "dropdown",
+                   selectInput(
+                     "area.name",
+                     "Area name:",
+                     choices = area_choices
+                   )
+               )
+        ),
+        column(3,
+               div(class = "dropdown",
+                   selectInput(
+                     "crm.cd.desc",
+                     "Crime type:",
+                     choices = crime_choices
+                   )
+               )
+        ),
+        column(6,
+               div(class = "header-text",
+                   "LA Area Advisor"
+               )
+        )
       )
     ),
     
