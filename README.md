@@ -5,7 +5,9 @@ This interactive dashboard is designed to provide detailed insights into the saf
 
 The safety index provides a quick view of how safe the selected area is relative to others in LA. A higher percentage means higher safety.
 
-## Demo (TO-DO)
+## Demo
+https://github.com/vasia-korz/crime-dashboard-la/assets/67659210/f493d154-0a79-4311-9e6d-014c807dcb55
+
 
 
 ## Getting started
