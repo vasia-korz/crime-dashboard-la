@@ -74,15 +74,20 @@ dashboardPage(
           padding: 40px;
           margin: 20px;
           color: white;
+          height: 20vh;
         }
         .icon-large {
-          font-size: 70px;
+          font-size: 56px;
+          display: flex;
+          justify-content: flex-end;
         }
         .value-large {
-          font-size: 80px;
+          font-size: 70px;
+          display: flex;
         }
         .label-large {
           font-size: 40px;
+          grid-column: 1/3;
         }
         .pretty-safe {
           background-color: #A5D6A7;
@@ -111,6 +116,12 @@ dashboardPage(
         .large-box {
           margin: 0;
           height: 100%;
+          align-items: center;
+          column-gap: 2rem;
+          display: grid;
+          padding: 0;
+          grid-template-columns: auto auto;
+          width: 100%;
         }
         .dropdown .box {
           border-top: none;
@@ -132,12 +143,18 @@ dashboardPage(
         }
         #safetyBox {
           width: 100%;
+          height: 60%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
         }
         .safety-box .box-body {
           padding: 1rem;
           display: flex;
           height: 100%;
+          padding: 0;
           width: 100%;
+          flex-direction: column;
         }
         .dataTables_wrapper .dataTables_filter {
           display: none;
@@ -152,6 +169,11 @@ dashboardPage(
         table.dataTable tbody tr.selected:hover td {
           box-shadow: none !important;
           background-color: #1E90FF !important;
+        }
+        
+        table.dataTable tbody tr td {
+          box-shadow: none !important;
+          background-color: white !important;
         }
         .second-row {
           height: 45vh;
@@ -197,10 +219,9 @@ dashboardPage(
           font-family: 'Arial', sans-serif;
           font-size: 16px;
           font-weight: bold;
-          color: black;
+          color: #7e7e7e;
           background-color: white;
           padding: 10px;
-          border: 1px dashed black;
         }
         
         .header-row {
@@ -218,7 +239,6 @@ dashboardPage(
           background-color: white;
           padding: 5px;
           width: 100%;
-          border: 1px solid grey;
           display: flex;
           justify-content: center;
           text-align: cetner;
@@ -233,6 +253,30 @@ dashboardPage(
         
         .box-body.descriptive {
           height: 100%;
+        }
+        
+        .map-box {
+          height: 100%;
+          width: 100%;
+          display: contents;
+        }
+        
+        .map-box .box .box-body {
+          padding: 0 !important;
+        }
+        
+        .safety-box .box.box-solid.box-primary {
+          background: none;
+          box-shadow: none;
+        }
+        
+        .safety-box .title_box {
+          background: none;
+          display: flex;
+          justify-content: cetner;
+          padding: 20px;
+          text-align: center;
+          font-size: 15px;
         }
         "
       ))
@@ -308,7 +352,12 @@ dashboardPage(
                     status = "primary",
                     solidHeader = TRUE,
                     uiOutput("safetyBox"),
-                    width = 3
+                    width = 3,
+                    div(class = "title_box", 
+                        div(class = "description", 
+                            "Safety index is calculated relatively to other areas of LA. The safest area in each category is valued at 100% and the most dangerous obtains 0%. Index is recalculated for each crime type in the area."
+                        )
+                    ),
                   )
               )    
             )
@@ -321,11 +370,13 @@ dashboardPage(
                 dataTableOutput("full_table"),
                 width = 3
               ),
-              box(
-                status = "primary",
-                solidHeader = TRUE,
-                leafletOutput("crimemap"),
-                width = 6
+              div(class = "map-box",
+                box(
+                  status = "primary",
+                  solidHeader = TRUE,
+                  leafletOutput("crimemap"),
+                  width = 6
+                )
               ),
               box(
                 div(class = "title_box", 
