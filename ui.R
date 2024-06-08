@@ -5,8 +5,8 @@ library(leaflet)
 library(plotly)
 library(base64enc)
 
-img <- file("www/logo_s.png", "rb")
-img_bin <- readBin(img, what = "raw", n = file.info("www/logo_s.png")$size)
+img <- file("www/PP_znak_konturowy_RGB.png", "rb")
+img_bin <- readBin(img, what = "raw", n = file.info("www/PP_znak_konturowy_RGB.png")$size)
 close(img)
 img_base64 <- base64encode(img_bin)
 
@@ -412,7 +412,7 @@ dashboardPage(
                         "Victim Race"
                     ),
                     div(class = "description", 
-                        "Check out which races are affected more."
+                        "Check out races that are affected the most."
                     )
                 ),
                 status = "primary",
@@ -449,7 +449,7 @@ dashboardPage(
                  strong("Area selection:"),
                  paste0(
                    "Select the specific area of Los Angeles you are interested",
-                   "in analyzing from the dropdown menu at the top-left ",
+                   " in analyzing from the dropdown menu at the top-left ",
                    "corner."
                  )
                ),
@@ -475,7 +475,8 @@ dashboardPage(
                ),
                tags$li(
                  strong("Victim Race:"),
-                 "Bar chart showing the number of victims by race."
+                 "Bar chart showing top 5 races with respect to the number ",
+                 "of victims."
                ),
                tags$li(
                  p(
@@ -523,9 +524,9 @@ dashboardPage(
                  )
                ),
                tags$li(
-                 strong("Victim Table:"),
+                 strong("Area Table:"),
                  paste0(
-                   "Lists areas with the number of victims, allowing users to ",
+                   "Lists areas with the number of crimes, allowing users to ",
                    "quickly identify regions with higher crime rates."
                  ),
                ),
