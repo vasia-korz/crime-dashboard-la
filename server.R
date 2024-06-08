@@ -167,17 +167,20 @@ shinyServer(function(input, output, session) {
     y_axis_limits <- list(range = c(0, max(data$`LA Average`, data$`Selected Area`, na.rm = TRUE) * 1.1))
     
     p <- plot_ly(data, x = ~month) %>%
-      add_markers(
+      add_lines(
         y = ~`LA Average`,
         name = "LA Average",
         line = list(color = "#B0BEC5", width = 4),
-        marker = list(color = "#B0BEC5", size = 8),
-        mode = "lines+markers",
         hovertext = ~paste0(
           "Month: ", full_month_names[as.integer(month)], "<br>",
           "LA Average: ", round(`LA Average`)
         ),
         hoverinfo = "text"
+      ) %>%
+      add_markers(
+        y = ~`LA Average`,
+        marker = list(color = "#B0BEC5", size = 8),
+        showlegend = FALSE
       ) %>%
       layout(
         title = "",
@@ -192,20 +195,25 @@ shinyServer(function(input, output, session) {
     
     if (selected_area_name != "All") {
       p <- p %>%
-        add_markers(
+        add_lines(
           y = ~`Selected Area`,
           name = selected_area_name,
-          line = list(color = "#1E90FF", width = 4),
-          marker = list(color = "#1E90FF", size = 8),
+          line = list(color = "#FF69B4", width = 4),
           hovertext = ~paste0(
             "Month: ", full_month_names[as.integer(month)], "<br>",
             selected_area_name, ": ", `Selected Area`
           ),
           hoverinfo = "text"
+        ) %>%
+        add_markers(
+          y = ~`Selected Area`,
+          marker = list(color = "#FF69B4", size = 8),
+          showlegend = FALSE
         )
     }
     p
   })
+  
   
   
   
@@ -277,15 +285,24 @@ shinyServer(function(input, output, session) {
       pull(count)
 
     selected_index <- which(filtered_areas_df()$AREA.NAME == input$area.name)
+    
+    if (length(selected_index) == 0) {
+      return(div(class = paste("large-box", "initial"),
+          icon("shield-alt", class = "icon-large"),
+          div(class = "value-large", paste0("LA")),
+          div(class = "label-large", "Safety Index")
+      ))
+    }
+
     safety_percentage <- percentages[selected_index]
 
     safety_percentage <- round(100 - safety_percentage * 100)
 
-    div(class = paste("large-box", getSafetyClass(safety_percentage)),
+    return(div(class = paste("large-box", getSafetyClass(safety_percentage)),
       icon("shield-alt", class = "icon-large"),
       div(class = "value-large", paste0(safety_percentage, "%")),
       div(class = "label-large", getSafetyLabel(safety_percentage))
-    )
+    ))
   })
 
   output$manwoman <- renderPlotly({
@@ -358,7 +375,7 @@ shinyServer(function(input, output, session) {
       y = ~Vict.Descent,
       type = "bar",
       marker = list(
-        color = "lightgrey"
+        color = "#B0BEC5"
       ),
       hovertext = ~paste0("Count: ", count),
       hoverinfo = "text"

@@ -100,6 +100,10 @@ dashboardPage(
         .dangerous {
           background-color: #F44336;
         }
+        .initial {
+          background-color: #B0BEC5;
+          color: black;
+        }
         .box.box-solid.box-primary {
           border: none;
           margin: 0;
@@ -164,11 +168,11 @@ dashboardPage(
         }
         table.dataTable tbody tr.selected td {
           box-shadow: none !important;
-          background-color: #1E90FF !important;
+          background-color: #FF69B4 !important;
         }
         table.dataTable tbody tr.selected:hover td {
           box-shadow: none !important;
-          background-color: #1E90FF !important;
+          background-color: #FF69B4 !important;
         }
         
         table.dataTable tbody tr td {
@@ -218,8 +222,8 @@ dashboardPage(
         .header-text {
           font-family: 'Arial', sans-serif;
           font-size: 16px;
-          font-weight: bold;
-          color: #7e7e7e;
+          font-weight: 400;
+          color: #6b6d6e;
           background-color: white;
           padding: 10px;
         }
@@ -229,7 +233,7 @@ dashboardPage(
         }
         
         table.dataTable tr.active td, table.dataTable tr.active {
-          box-shadow: inset 0 0 0 9999px #1E90FF !important;
+          box-shadow: inset 0 0 0 9999px #FF69B4 !important;
         }
         
         .title_box {
@@ -249,6 +253,10 @@ dashboardPage(
           font-size: 30px;
           font-weight: 500;
           align-items: center;
+        }
+        
+        .title_box .description {
+          color: #6b6d6e;
         }
         
         .box-body.descriptive {
