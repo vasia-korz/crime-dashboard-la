@@ -19,7 +19,7 @@ git clone https://github.com/vasia-korz/crime-dashboard-la
 cd crime-dashboard-la
 mkdir data
 ```
-3. Download the [dataset](https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8/about_data) and put it into `data` directory.
+3. Download the [dataset](https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8/about_data) and put it into `data` directory. You should have `dataset_extended.csv` file in that folder.
 
 4. Run preprocessing script:
 - Windows
