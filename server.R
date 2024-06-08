@@ -319,7 +319,7 @@ shinyServer(function(input, output, session) {
     
     data$Vict.Sex <- factor(data$Vict.Sex, levels = c("Male", "Female"))
     
-    colors <- c("#1E90FF", "#FF69B4")
+    colors <- c("#B0BEC5", "#FF69B4")
     names(colors) <- c("Male", "Female")
     
     plot_ly(

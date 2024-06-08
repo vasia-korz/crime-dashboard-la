@@ -5,8 +5,8 @@ library(leaflet)
 library(plotly)
 library(base64enc)
 
-img <- file("www/logo.png", "rb")
-img_bin <- readBin(img, what = "raw", n = file.info("www/logo.png")$size)
+img <- file("www/logo_s.png", "rb")
+img_bin <- readBin(img, what = "raw", n = file.info("www/logo_s.png")$size)
 close(img)
 img_base64 <- base64encode(img_bin)
 
@@ -94,11 +94,11 @@ dashboardPage(
           color: black;
         }
         .moderately-safe {
-          background-color: #FFEB3B;
+          background-color: #fbed6e;
           color: black;
         }
         .dangerous {
-          background-color: #F44336;
+          background-color: #f05e53;
         }
         .initial {
           background-color: #B0BEC5;
