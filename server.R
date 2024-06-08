@@ -180,7 +180,12 @@ shinyServer(function(input, output, session) {
       add_markers(
         y = ~`LA Average`,
         marker = list(color = "#B0BEC5", size = 8),
-        showlegend = FALSE
+        showlegend = FALSE,
+        hovertext = ~paste0(
+          "Month: ", full_month_names[as.integer(month)], "<br>",
+          "LA Average: ", round(`LA Average`)
+        ),
+        hoverinfo = "text"
       ) %>%
       layout(
         title = "",
@@ -208,11 +213,17 @@ shinyServer(function(input, output, session) {
         add_markers(
           y = ~`Selected Area`,
           marker = list(color = "#FF69B4", size = 8),
-          showlegend = FALSE
+          showlegend = FALSE,
+          hovertext = ~paste0(
+            "Month: ", full_month_names[as.integer(month)], "<br>",
+            selected_area_name, ": ", `Selected Area`
+          ),
+          hoverinfo = "text"
         )
     }
     p
   })
+  
   
   # General data
   filtered_data <- reactive({
