@@ -29,6 +29,13 @@ url_template <- "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{
 attribution <- '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
 
 shinyServer(function(input, output, session) {
+  observeEvent(input$show_help, {
+    updateTabItems(session, "tabs", selected = "help")
+  })
+
+  observeEvent(input$unshow_help, {
+    updateTabItems(session, "tabs", selected = "dashboard")
+  })
   ### Filters ###
   
   # Limit choices from filter by area

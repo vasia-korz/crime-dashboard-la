@@ -43,7 +43,9 @@ dashboardPage(
   
   dashboardSidebar(
     sidebarMenu(
-      menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard"))
+      id = "tabs",
+      menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
+      menuItem("Help", tabName = "help", icon = icon("question-circle"))
     ),
     collapsed = TRUE
   ),
@@ -286,44 +288,62 @@ dashboardPage(
           text-align: center;
           font-size: 15px;
         }
+        
+        .help-button {
+          position: fixed;
+          top: 25px;
+          right: 20px;
+          border-radius: 50%;
+          background-color: #FF69B4;
+          color: white;
+          width: 40px;
+          height: 40px;
+          border: none;
+          font-size: 30px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+          box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
+        }
         "
       ))
     ),
     
-    div(class = "header-row",
-        fluidRow(
-          column(2,
-                 div(class = "dropdown",
-                     selectInput(
-                       "area.name",
-                       "Area name:",
-                       choices = area_choices
-                     )
-                 )
-          ),
-          column(2,
-                 div(class = "dropdown",
-                     selectInput(
-                       "crm.cd.desc",
-                       "Crime type:",
-                       choices = crime_choices
-                     )
-                 )
-          ),
-          column(7,
-                 div(class = "header-text",
-                     "Select an area of Los Angeles based on safety rankings and crime details. Compare crime rates with the LA average, see victim demographics, and assess overall safety to make informed decisions about where to live or visit."
-                 )
-          ),
-          column(1,
-                 tags$img(src = paste0("data:image/png;base64,", img_base64), height = "67px", width = "auto") 
-          )
-        )
-    ),
     
     tabItems(
       tabItem(
         tabName = "dashboard",
+        div(class = "header-row",
+            fluidRow(
+              column(2,
+                     div(class = "dropdown",
+                         selectInput(
+                           "area.name",
+                           "Area name:",
+                           choices = area_choices
+                         )
+                     )
+              ),
+              column(2,
+                     div(class = "dropdown",
+                         selectInput(
+                           "crm.cd.desc",
+                           "Crime type:",
+                           choices = crime_choices
+                         )
+                     )
+              ),
+              column(7,
+                     div(class = "header-text",
+                         "Select an area of Los Angeles based on safety rankings and crime details. Compare crime rates with the LA average, see victim demographics, and assess overall safety to make informed decisions about where to live or visit."
+                     )
+              ),
+              column(1,
+                     tags$img(src = paste0("data:image/png;base64,", img_base64), height = "67px", width = "auto") 
+              )
+            )
+        ),
         div(class = "first-row",
             fluidRow(
               box(
@@ -401,8 +421,159 @@ dashboardPage(
                 width = 3
               )
           )
+        ),
+        actionButton("helpButton", "?",
+                     class = "help-button",
+                     onclick = "Shiny.setInputValue('show_help', Math.random());")
+        ),
+      tabItem(
+        tabName = "help",
+        div(
+          style = "padding: 20px; max-width: 800px; margin: auto;",
+          h1("Help Page"),
+          p("Welcome to the LA Crimes Dashboard! This help page provides an overview of the features and functionalities available in the dashboard to help you understand and navigate through the various components effectively."),
+          div(
+             h2("About dashboard"),
+             p(
+               "This interactive dashboard is designed to provide detailed ",
+               "insights into the safety and crime statistics of various ",
+               "areas within Los Angeles. It allows users to compare crime ",
+               "rates with the LA average, understand the demographics of ",
+               "victims, and assess the overall safety of different ",
+               "neighborhoods."
+             ),
+             h2("Main Features"),
+             tags$ul(
+               style = "padding: 10px;",
+               tags$li(
+                 strong("Area selection:"),
+                 paste0(
+                   "Select the specific area of Los Angeles you are interested",
+                   "in analyzing from the dropdown menu at the top-left ",
+                   "corner."
+                 )
+               ),
+               tags$li(
+                 strong("Crime Type Filter:"),
+                 paste0(
+                   "Filter crime data by selecting a specific crime type",
+                   "or view all crime types."
+                 )
+               ),
+               tags$li(
+                 strong("Comparison with Average:"),
+                 paste0(
+                   "Shows how the selected area's crime rate differs from",
+                   "the LA average over the past few months."
+                 ),
+               ),
+               tags$li(
+                 strong("Victim Sex:"),
+                 paste0(
+                   "Bar chart comparing the number of male and female victims."
+                 ),
+               ),
+               tags$li(
+                 strong("Victim Race:"),
+                 "Bar chart showing the number of victims by race."
+               ),
+               tags$li(
+                 p(
+                   strong("Safety Index:"),
+                   paste0(
+                     "Displays a percentage indicating the relative safety of ",
+                     "the selected area. Safety index is calculated relatively",
+                     " to other areas of LA. The safest area in each category ",
+                     "is valued at 100% and the most dangerous obtains 0%. ",
+                     "Index is recalculated for each crime type in the area."
+                   )
+                 ),
+                 p(
+                   span(
+                     "High Safety",
+                     style = paste0(
+                       "background-color: #A5D6A7;",
+                       "color: black; padding: 5px;",
+                       "border-radius: 5px;"
+                     ),
+                   ),
+                   ": Green background when safety index is greater than 80%"
+                 ),
+                 p(
+                   span(
+                     "Moderate Safety",
+                     style = paste0(
+                       "background-color: #fbed6e;",
+                       "color: black; padding: 5px;",
+                       "border-radius: 5px;"
+                     ),
+                   ),
+                   ": Yellow background when safety index is between 50% and 80%"
+                 ),
+                 p(
+                   span(
+                     "Low Safety",
+                     style = paste0(
+                       "background-color: #f05e53;",
+                       "color: white; padding: 5px;",
+                       "border-radius: 5px;"
+                     ),
+                   ),
+                   ": Red background when safety index is lower than 50%"
+                 )
+               ),
+               tags$li(
+                 strong("Victim Table:"),
+                 paste0(
+                   "Lists areas with the number of victims, allowing users to ",
+                   "quickly identify regions with higher crime rates."
+                 ),
+               ),
+               tags$li(
+                 strong("Map Visualization:"),
+                 paste0(
+                   "Interactive map displaying the locations of crimes ",
+                   "with clickable markers for detailed crime ",
+                   "information."
+                 )
+               )
+             ),
+             h2("Repository"),
+             p(
+               "The code of the project is available on ",
+               a(
+                 href = "https://github.com/vasia-korz/crime-dashboard-la",
+                 "Github",
+                 target = "_blank",
+                 .noWS = "outside"
+               ),
+               ". In case of any questions, feel free to open an issue!"
+             ),
+             h2("Source"),
+             p(
+               "The visualization would not be possible without the collected ",
+               "data. The details, with the dataset itself, you can find on ",
+               "the ",
+               a(
+                 href = "https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8/about_data",
+                 "Los Angeles - Open Data Portal",
+                 target = "_blank",
+                 .noWS = "outside"
+               ),
+               ". Design decisions forced us to apply several preprocessing ",
+               "steps, which you can find in the script in repository."
+             )
+           ),
+           
+
+        actionButton("backButton", icon("chevron-left"),
+                     class = "help-button",
+                     onclick = "Shiny.setInputValue('unshow_help', Math.random());")
         )
       )
-    )
+    ),
+    
   )
 )
+
+
