@@ -170,8 +170,8 @@ shinyServer(function(input, output, session) {
       add_markers(
         y = ~`LA Average`,
         name = "LA Average",
-        line = list(color = "grey", width = 4),
-        marker = list(color = "grey", size = 8),
+        line = list(color = "#B0BEC5", width = 4),
+        marker = list(color = "#B0BEC5", size = 8),
         mode = "lines+markers",
         hovertext = ~paste0(
           "Month: ", full_month_names[as.integer(month)], "<br>",
@@ -195,8 +195,8 @@ shinyServer(function(input, output, session) {
         add_markers(
           y = ~`Selected Area`,
           name = selected_area_name,
-          line = list(color = "magenta", width = 4),
-          marker = list(color = "magenta", size = 8),
+          line = list(color = "#1E90FF", width = 4),
+          marker = list(color = "#1E90FF", size = 8),
           hovertext = ~paste0(
             "Month: ", full_month_names[as.integer(month)], "<br>",
             selected_area_name, ": ", `Selected Area`
@@ -252,11 +252,11 @@ shinyServer(function(input, output, session) {
   # safety index
   getSafetyLabel <- function(safety_percentage) {
     if (safety_percentage > 80) {
-      return("Pretty Safe")
+      return("High Safety")
     } else if (safety_percentage > 50) {
-      return("Moderately Safe")
+      return("Moderate Safety")
     } else {
-      return("Dangerous")
+      return("Low Safety")
     }
   }
 
@@ -296,7 +296,7 @@ shinyServer(function(input, output, session) {
     
     data$Vict.Sex <- factor(data$Vict.Sex, levels = c("Male", "Female"))
     
-    colors <- c("#4169E1FF", "#FF5733FF")
+    colors <- c("#1E90FF", "#FF69B4")
     names(colors) <- c("Male", "Female")
     
     plot_ly(
@@ -388,7 +388,7 @@ shinyServer(function(input, output, session) {
   # Full table
   output$full_table <- renderDataTable({
     data <- filtered_areas_df() %>%
-      select(AREA.NAME, count)
+      select(`Area name` = AREA.NAME, Victims = count)
     if (is.null(data)) {
       return(NULL)
     }

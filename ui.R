@@ -1,9 +1,14 @@
-# Load necessary libraries
 library(shiny)
 library(shinydashboard)
 library(DT)
 library(leaflet)
 library(plotly)
+library(base64enc)
+
+img <- file("www/logo.png", "rb")
+img_bin <- readBin(img, what = "raw", n = file.info("www/logo.png")$size)
+close(img)
+img_base64 <- base64encode(img_bin)
 
 vict_descent_choices <- c(
   "All",
@@ -67,7 +72,6 @@ dashboardPage(
           font-size: 50px;
           text-align: center;
           padding: 40px;
-          border-radius: 10px;
           margin: 20px;
           color: white;
         }
@@ -81,18 +85,18 @@ dashboardPage(
           font-size: 40px;
         }
         .pretty-safe {
-          background-color: green;
+          background-color: #A5D6A7;
+          color: black;
         }
         .moderately-safe {
-          background-color: yellow;
+          background-color: #FFEB3B;
           color: black;
         }
         .dangerous {
-          background-color: red;
+          background-color: #F44336;
         }
         .box.box-solid.box-primary {
           border: none;
-          border-radius: 10px;
           margin: 0;
         }
         .box.box-solid.box-primary>.box-header {
@@ -143,11 +147,11 @@ dashboardPage(
         }
         table.dataTable tbody tr.selected td {
           box-shadow: none !important;
-          background-color: magenta !important;
+          background-color: #1E90FF !important;
         }
         table.dataTable tbody tr.selected:hover td {
           box-shadow: none !important;
-          background-color: magenta !important;
+          background-color: #1E90FF !important;
         }
         .second-row {
           height: 45vh;
@@ -184,23 +188,19 @@ dashboardPage(
         .second-row div.datatables {
           height: 100% !important;
         }
-        .plot-container {
-          width: 100%;
-          height: 100%;
-          padding: 10px;
-        }
-        .plot {
-          width: 100%;
-          height: 30vh;
-        }
+        
         html, .content-wrapper {
-          background: #c8d9ed;
+          background: #F3F3F3;
         }
+        
         .header-text {
-          font-size: 50px;
-          color: darkblue;
+          font-family: 'Arial', sans-serif;
+          font-size: 16px;
           font-weight: bold;
-          text-align: center;
+          color: black;
+          background-color: white;
+          padding: 10px;
+          border: 1px dashed black;
         }
         
         .header-row {
@@ -208,41 +208,66 @@ dashboardPage(
         }
         
         table.dataTable tr.active td, table.dataTable tr.active {
-          box-shadow: inset 0 0 0 9999px magenta !important;
+          box-shadow: inset 0 0 0 9999px #1E90FF !important;
         }
         
+        .title_box {
+          font-size: 18px;
+          font-weight: 500;
+          color: black;
+          background-color: white;
+          padding: 5px;
+          width: 100%;
+          border: 1px solid grey;
+          display: flex;
+          justify-content: center;
+          text-align: cetner;
+          flex-direction: column;
+        }
+        
+        .title_box .title {
+          font-size: 30px;
+          font-weight: 500;
+          align-items: center;
+        }
+        
+        .box-body.descriptive {
+          height: 100%;
+        }
         "
       ))
     ),
     
     div(class = "header-row",
-      fluidRow(
-        column(3,
-               div(class = "dropdown",
-                   selectInput(
-                     "area.name",
-                     "Area name:",
-                     choices = area_choices
-                   )
-               )
-        ),
-        column(3,
-               div(class = "dropdown",
-                   selectInput(
-                     "crm.cd.desc",
-                     "Crime type:",
-                     choices = crime_choices
-                   )
-               )
-        ),
-        column(6,
-               div(class = "header-text",
-                   "LA Area Advisor"
-               )
+        fluidRow(
+          column(2,
+                 div(class = "dropdown",
+                     selectInput(
+                       "area.name",
+                       "Area name:",
+                       choices = area_choices
+                     )
+                 )
+          ),
+          column(2,
+                 div(class = "dropdown",
+                     selectInput(
+                       "crm.cd.desc",
+                       "Crime type:",
+                       choices = crime_choices
+                     )
+                 )
+          ),
+          column(7,
+                 div(class = "header-text",
+                     "Select an area of Los Angeles based on safety rankings and crime details. Compare crime rates with the LA average, see victim demographics, and assess overall safety to make informed decisions about where to live or visit."
+                 )
+          ),
+          column(1,
+                 tags$img(src = paste0("data:image/png;base64,", img_base64), height = "67px", width = "auto") 
+          )
         )
-      )
     ),
-    
     
     tabItems(
       tabItem(
@@ -250,22 +275,36 @@ dashboardPage(
         div(class = "first-row",
             fluidRow(
               box(
-                title = "Monthly Crime Comparison",
+                div(class = "title_box", 
+                    div(class = "title", 
+                        "Comparison with average"
+                    ),
+                    div(class = "description", 
+                        "Choose an area in order to see how its crime rate differs from the LA Average."
+                    )
+                ),
                 status = "primary",
                 solidHeader = TRUE,
-                plotlyOutput("monthly_comparison", height="32vh"),
-                width = 6
+                plotlyOutput("monthly_comparison", height="25vh"),
+                width = 6,
+                class = "descriptive"
               ),
               box(
-                title = "Number of Crimes by Victim Descent",
+                div(class = "title_box", 
+                    div(class = "title", 
+                        "Victim Sex"
+                    ),
+                    div(class = "description", 
+                        "Check out which sex is affected more."
+                    )
+                ),
                 status = "primary",
-                plotlyOutput("manwoman", height="32vh"),
+                plotlyOutput("manwoman", height="25vh"),
                 solidHeader = TRUE,
                 width = 3
               ),
               div(class = "safety-box",
                   box(
-                    title = "Crimes Finished vs. Not Finished",
                     status = "primary",
                     solidHeader = TRUE,
                     uiOutput("safetyBox"),
@@ -277,24 +316,29 @@ dashboardPage(
         fluidRow(
           div(class = "second-row",
               box(
-                title = "Sales per Customer by Category",
                 status = "primary",
                 solidHeader = TRUE,
                 dataTableOutput("full_table"),
                 width = 3
               ),
               box(
-                title = "Top Customers",
                 status = "primary",
                 solidHeader = TRUE,
                 leafletOutput("crimemap"),
                 width = 6
               ),
               box(
-                title = "Number of Crimes by Victim Descent",
+                div(class = "title_box", 
+                    div(class = "title", 
+                        "Victim Race"
+                    ),
+                    div(class = "description", 
+                        "Check out which races are affected more."
+                    )
+                ),
                 status = "primary",
                 solidHeader = TRUE,
-                plotlyOutput("plot2", height="42vh"),
+                plotlyOutput("plot2", height="32vh"),
                 width = 3
               )
           )
