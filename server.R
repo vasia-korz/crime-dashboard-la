@@ -104,7 +104,7 @@ shinyServer(function(input, output, session) {
     summarized_data$total_count <- as.numeric(summarized_data$total_count)
     
     unique_months <- c(1, 2, 3, 4, 5)
-    unique_areas <- c('N Hollywood', 'Hollywood', '77th Street', 'Van Nuys', 'Southeast',
+    unique_areas <- c('North Hollywood', 'Hollywood', '77th Street', 'Van Nuys', 'Southeast',
                       'Southwest', 'Central', 'Pacific', 'Wilshire', 'Northeast', 'Newton', 'Olympic',
                       'Rampart', 'Mission', 'Topanga', 'Devonshire', 'Hollenbeck', 'West Valley',
                       'Harbor', 'West LA', 'Foothill')
@@ -214,11 +214,6 @@ shinyServer(function(input, output, session) {
     p
   })
   
-  
-  
-  
-  
-
   # General data
   filtered_data <- reactive({
     result <- dataset_cut

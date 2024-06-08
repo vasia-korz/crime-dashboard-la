@@ -31,7 +31,7 @@ vict_descent_choices <- c(
   "Samoan"
 )
 
-area_choices <- c('All', 'N Hollywood', 'Hollywood', '77th Street', 'Van Nuys', 'Southeast',
+area_choices <- c('All', 'North Hollywood', 'Hollywood', '77th Street', 'Van Nuys', 'Southeast',
                   'Southwest', 'Central', 'Pacific', 'Wilshire', 'Northeast', 'Newton', 'Olympic',
                   'Rampart', 'Mission', 'Topanga', 'Devonshire', 'Hollenbeck', 'West Valley',
                   'Harbor', 'West LA', 'Foothill')
